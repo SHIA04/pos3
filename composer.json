@@ -1,0 +1,14 @@
+{
+    "name": "asias/pos3",
+    "description": "POS3 Project",
+    "authors": [
+        {
+            "name": "Asia Valmorida",
+            "email": "2090129@g.cu.edu.ph"
+        }
+    ],
+    "require": {
+        "phpoffice/phpspreadsheet": "4.2.0",
+        "maennchen/zipstream-php": "^2.1"
+    }
+}
