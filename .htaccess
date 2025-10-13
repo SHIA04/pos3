@@ -1,7 +1,18 @@
+# If your app lives at http://localhost/POS3/, put this .htaccess next to index.php
+# and set RewriteBase to /POS3/
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # Adjust this to your subfolder, include leading and trailing slashes
     RewriteBase /POS3/
+
+    # Skip existing files/directories
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Route everything to index.php
     RewriteRule ^(.*)$ index.php/$1 [L]
+
+    # Allow CORS preflight OPTIONS through to index.php if needed
+    RewriteCond %{REQUEST_METHOD} =OPTIONS
 </IfModule>

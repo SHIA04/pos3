@@ -9,13 +9,13 @@ class SettingsModel extends CI_Model {
     }
 
     // ✅ Get admin info for current session
-    public function get_admin($admin_id) {
-        return $this->db->get_where('tbl_signup', ['admin_id' => $admin_id])->row_array();
+    public function get_admin($signup_id) {
+        return $this->db->get_where('tbl_signup', ['signup_id' => $signup_id])->row_array();
     }
 
     // ✅ Update username and/or password
-    public function update_admin($admin_id, $data) {
-        $this->db->where('admin_id', $admin_id);
+    public function update_admin($signup_id, $data) {
+        $this->db->where('signup_id', $signup_id);
         return $this->db->update('tbl_signup', $data);
     }
 }

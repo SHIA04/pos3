@@ -22,10 +22,14 @@ class AuthController extends CI_Controller {
         $this->load->view('auth/signup');
     }
 
-    public function register() {
+    public function register()
+    {
         if ($this->input->method() !== 'post') {
             show_error('Invalid request method.', 405);
         }
+
+        // Ensure model is loaded
+        $this->load->model('SignupModel');
 
         // ============================
         // ✅ FORM VALIDATION RULES
@@ -35,7 +39,10 @@ class AuthController extends CI_Controller {
         $this->form_validation->set_rules('age', 'Age', 'required|integer|greater_than[0]|less_than[120]');
         $this->form_validation->set_rules('sex', 'Sex', 'required');
         $this->form_validation->set_rules('birthday', 'Birthday', 'required');
-        $this->form_validation->set_rules('role', 'Role', 'required|in_list[owner,staff]');
+
+        // Include admin here
+        $this->form_validation->set_rules('role', 'Role', 'required|in_list[owner,staff,admin]');
+
         $this->form_validation->set_rules('phone_number', 'Phone Number', 'required|exact_length[11]|numeric');
         $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
         $this->form_validation->set_rules('password', 'Password', 'required|min_length[8]');
@@ -63,6 +70,9 @@ class AuthController extends CI_Controller {
         if ($this->SignupModel->email_exists($email)) {
             $custom_errors[] = 'Email already exists';
         }
+        if ($this->SignupModel->username_exists($username)) {
+            $custom_errors[] = 'Username already exists';
+        }
 
         if (!empty($custom_errors)) {
             if ($this->input->is_ajax_request()) {
@@ -78,27 +88,28 @@ class AuthController extends CI_Controller {
         // ✅ SANITIZE INPUTS
         // ============================
         $data = [
-            'fullname' => xss_clean($this->input->post('fullname', TRUE)),
-            'username' => xss_clean($username),
-            'age' => (int)$this->input->post('age', TRUE),
-            'sex' => xss_clean($this->input->post('sex', TRUE)),
-            'birthday' => xss_clean($this->input->post('birthday', TRUE)),
-            'role' => xss_clean($this->input->post('role', TRUE)),
+            'fullname'     => xss_clean($this->input->post('fullname', TRUE)),
+            'username'     => xss_clean($username),
+            'age'          => (int)$this->input->post('age', TRUE),
+            'sex'          => xss_clean($this->input->post('sex', TRUE)),
+            'birthday'     => xss_clean($this->input->post('birthday', TRUE)),
+            'role'         => xss_clean($this->input->post('role', TRUE)),
             'phone_number' => xss_clean($this->input->post('phone_number', TRUE)),
-            'email' => xss_clean($email),
-            'password' => password_hash($this->input->post('password', TRUE), PASSWORD_BCRYPT),
-            'confirm_password' => password_hash($this->input->post('confirm_password', TRUE), PASSWORD_BCRYPT),
-            'created_at' => date('Y-m-d H:i:s')
+            'email'        => xss_clean($email),
+            // Store only the main password hash
+            'password'     => password_hash($this->input->post('password', TRUE), PASSWORD_BCRYPT),
+            // Do NOT store confirm_password
+            'created_at'   => date('Y-m-d H:i:s')
         ];
 
         // ============================
         // ✅ PROFILE IMAGE UPLOAD
         // ============================
         if (!empty($_FILES['profile_image']['name'])) {
-            $config['upload_path'] = './uploads/profile_images/';
+            $config['upload_path']   = './uploads/profile_images/';
             $config['allowed_types'] = 'jpg|jpeg|png';
-            $config['max_size'] = 2048;
-            $config['encrypt_name'] = TRUE;
+            $config['max_size']      = 2048;
+            $config['encrypt_name']  = TRUE;
             $this->load->library('upload', $config);
 
             if ($this->upload->do_upload('profile_image')) {
@@ -146,31 +157,107 @@ class AuthController extends CI_Controller {
         $this->load->view('auth/login');
     }
 
-    public function process_login() {
-        $this->form_validation->set_rules('username', 'Username', 'required|alpha_numeric');
+    public function process_login()
+    {
+        if (strtoupper($this->input->method()) !== 'POST') {
+            show_error('Method Not Allowed', 405);
+        }
+
+        // Allow letters, numbers, underscores and dashes in username
+        $this->form_validation->set_rules('username', 'Username', 'required|trim|alpha_dash');
         $this->form_validation->set_rules('password', 'Password', 'required|min_length[5]');
 
-        if ($this->form_validation->run() == FALSE) {
-            $this->session->set_flashdata('error', validation_errors());
-            redirect('auth/login');
+        // Detect AJAX/fetch requests
+        $accept = $this->input->get_request_header('Accept', TRUE);
+        $isAjax = $this->input->is_ajax_request() || (is_string($accept) && strpos($accept, 'application/json') !== false);
+
+        if ($this->form_validation->run() === FALSE) {
+            if ($isAjax) {
+                // Return validation errors as JSON array and include a fresh CSRF token
+                $errors = array_values($this->form_validation->error_array());
+                return $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode([
+                        'status'  => 'error',
+                        'message' => !empty($errors) ? $errors : [strip_tags(validation_errors())],
+                        'csrf_token_name' => $this->security->get_csrf_token_name(),
+                        'csrf_hash' => $this->security->get_csrf_hash()
+                    ]));
+            } else {
+                $this->session->set_flashdata('error', validation_errors());
+                return redirect('auth/login');
+            }
         }
 
         $username = $this->input->post('username', TRUE);
         $password = $this->input->post('password', TRUE);
 
+        // Validate using LoginModel against tbl_signup
         $user = $this->LoginModel->validate_user($username, $password);
 
+        // Optional debug: if the AJAX request sends _debug_csrf=1, return the received POST/Cookie values
+        if ($isAjax && $this->input->post('_debug_csrf') == '1') {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status' => 'debug',
+                    'post_csrf' => isset($_POST[$this->security->get_csrf_token_name()]) ? $_POST[$this->security->get_csrf_token_name()] : null,
+                    'cookie_csrf' => isset($_COOKIE[$this->security->get_csrf_cookie_name()]) ? $_COOKIE[$this->security->get_csrf_cookie_name()] : null,
+                    'csrf_token_name' => $this->security->get_csrf_token_name(),
+                    'csrf_hash' => $this->security->get_csrf_hash()
+                ]));
+        }
+
         if ($user) {
+            // Role: 'owner' | 'staff' | 'admin'
+            $role = isset($user->role) ? $user->role : null;
+
+            // Regenerate session ID to prevent fixation
+            if (method_exists($this->session, 'sess_regenerate')) {
+                $this->session->sess_regenerate(TRUE);
+            }
+
+            // Store correct identifiers in session for tbl_signup
             $this->session->set_userdata([
-                'admin_id' => $user->admin_id,
-                'username' => $user->username,
+                'signup_id' => $user->signup_id,
+                'user_id'   => $user->signup_id,
+                'username'  => $user->username,
+                'role'      => $role,
                 'logged_in' => TRUE
             ]);
-            $this->session->set_flashdata('success', 'Login successful!');
-            redirect('dashboard');
+
+            // Since your view folder is views/dashboard, route everyone to /dashboard controller
+            $redirectPath = ($role === 'owner' ? 'owner/dashboard' : 'staff/dashboard');
+
+            if ($isAjax) {
+                return $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode([
+                        'status'   => 'success',
+                        'message'  => 'Login successful!',
+                        'role'     => $role,
+                        'redirect' => site_url($redirectPath),
+                        'csrf_token_name' => $this->security->get_csrf_token_name(),
+                        'csrf_hash' => $this->security->get_csrf_hash()
+                    ]));
+            } else {
+                $this->session->set_flashdata('success', 'Login successful!');
+                return redirect($redirectPath);
+            }
         } else {
-            $this->session->set_flashdata('error', 'Invalid username or password.');
-            redirect('auth/login');
+            if ($isAjax) {
+                return $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode([
+                        'status'  => 'error',
+                        'message' => 'Invalid username or password.',
+                        'csrf_token_name' => $this->security->get_csrf_token_name(),
+                        'csrf_hash' => $this->security->get_csrf_hash()
+                    ]));
+            } else {
+                $this->session->set_flashdata('error', 'Invalid username or password.');
+                return redirect('auth/login');
+            }
         }
     }
 
@@ -178,7 +265,8 @@ class AuthController extends CI_Controller {
     // ✅ LOGOUT
     // ==============================
     public function logout() {
-        $this->session->unset_userdata(['admin_id', 'username', 'logged_in']);
+        // Unset correct keys based on tbl_signup
+        $this->session->unset_userdata(['signup_id', 'username', 'role', 'logged_in']);
         $this->session->sess_destroy();
         $this->output->set_header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
         $this->output->set_header('Pragma: no-cache');

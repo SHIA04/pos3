@@ -1,43 +1,62 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class LoginModel extends CI_Model {
-
-    public function __construct() {
-        parent::__construct();
-    }
-
-    // ✅ Validate user credentials
-    public function validate_user($username, $password) {
-        // Sanitize inputs (XSS filtering handled by CI input class)
-        $username = $this->security->xss_clean($username);
-        $password = $this->security->xss_clean($password);
-
-        $this->db->where('username', $username);
-        $query = $this->db->get('tbl_login');
-
-        if ($query->num_rows() === 1) {
-            $user = $query->row();
-            // ✅ Password verification
-            if (password_verify($password, $user->password)) {
-                return $user;
-            }
+class LoginModel extends CI_Model
+{
+    /**
+     * Validate a user by username and password against tbl_signup.
+     *
+     * Expects tbl_signup columns:
+     * - signup_id (PK)
+     * - username
+     * - role
+     * - password (preferably a password_hash() value)
+     *
+     * @param string $username
+     * @param string $password
+     * @return object|false stdClass user row on success, false otherwise
+     */
+    public function validate_user($username, $password)
+    {
+        if (!is_string($username) || $username === '' || !is_string($password)) {
+            return false;
         }
+
+        $query = $this->db
+            ->select('signup_id, username, role, password')
+            ->from('tbl_signup')
+            ->where('username', $username)
+            ->limit(1)
+            ->get();
+
+        $row = $query->row();
+        if (!$row) {
+            return false;
+        }
+
+        $stored = (string) $row->password;
+
+        // Prefer secure verify if stored is a hash
+        $isHash = (strpos($stored, '$2y$') === 0) || (strpos($stored, '$argon2') === 0);
+        if ($isHash) {
+            if (password_verify($password, $stored)) {
+                // Optionally rehash if needed (algorithm changes/cost)
+                if (password_needs_rehash($stored, PASSWORD_DEFAULT)) {
+                    // Safe best-effort rehash update (ignore errors)
+                    $newHash = password_hash($password, PASSWORD_DEFAULT);
+                    $this->db->where('signup_id', $row->signup_id)
+                             ->update('tbl_signup', ['password' => $newHash]);
+                }
+                return $row;
+            }
+            return false;
+        }
+
+        // Fallback: plain-text compare if DB still stores plain passwords (not recommended)
+        if (hash_equals($stored, $password)) {
+            return $row;
+        }
+
         return false;
     }
-
-    public function insert_login($data) {
-    return $this->db->insert('tbl_login', $data);
-}
-
-public function get_admin_by_id($admin_id) {
-    return $this->db->get_where('tbl_login', ['admin_id' => $admin_id])->row_array();
-}
-
-public function update_admin($admin_id, $data) {
-    $this->db->where('admin_id', $admin_id);
-    return $this->db->update('tbl_login', $data);
-}
-
-
 }

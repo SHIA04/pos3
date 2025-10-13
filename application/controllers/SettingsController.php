@@ -17,8 +17,8 @@ class SettingsController extends CI_Controller {
 
     // Load the settings page
     public function index() {
-        $admin_id = $this->session->userdata('admin_id');
-        $data['admin'] = $this->SettingsModel->get_admin($admin_id);
+        $signup_id = $this->session->userdata('signup_id');
+        $data['admin'] = $this->SettingsModel->get_admin($signup_id);
         $this->load->view('settings', $data);
     }
 
@@ -28,7 +28,7 @@ class SettingsController extends CI_Controller {
             show_error('Invalid request method', 405);
         }
 
-        $admin_id = $this->session->userdata('admin_id');
+        $signup_id = $this->session->userdata('signup_id');
         $username = xss_clean($this->input->post('username', TRUE));
         $password = $this->input->post('password', TRUE);
         $confirm_password = $this->input->post('confirm_password', TRUE);
@@ -52,7 +52,7 @@ class SettingsController extends CI_Controller {
         }
 
         // ✅ Update DB
-        if ($this->SettingsModel->update_admin($admin_id, $update_data)) {
+        if ($this->SettingsModel->update_admin($signup_id, $update_data)) {
             $this->session->set_flashdata('success', 'Account updated successfully!');
         } else {
             $this->session->set_flashdata('error', 'No changes made or update failed.');
