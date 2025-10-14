@@ -181,7 +181,7 @@
       <div class="stat-card">
         <div class="stat-icon bg-primary-subtle text-primary"><i class="bi bi-cash-stack"></i></div>
         <div class="stat-info">
-            <h3><?php echo '₱' . number_format((float)($total_revenue ?? 0), 2); ?></h3>
+            <h5 class="fw-bold"><?php echo '₱' . number_format((float)($total_revenue ?? 0), 2); ?></h5>
             <p>Total Revenue</p>
         </div>
       </div>
@@ -190,7 +190,7 @@
       <div class="stat-card">
         <div class="stat-icon bg-success-subtle text-success"><i class="bi bi-graph-up-arrow"></i></div>
         <div class="stat-info">
-            <h3><?php echo '₱' . number_format((float)($todays_profit ?? 0), 2); ?></h3>
+            <h5 class="fw-bold"><?php echo '₱' . number_format((float)($todays_profit ?? 0), 2); ?></h5>
             <p>Today's Profit</p>
         </div>
       </div>
@@ -199,7 +199,7 @@
       <div class="stat-card">
         <div class="stat-icon bg-warning-subtle text-warning"><i class="bi bi-basket"></i></div>
         <div class="stat-info">
-            <h3><?php echo (int)($orders_today ?? 0); ?></h3>
+            <h5 class="fw-bold"><?php echo (int)($orders_today ?? 0); ?></h5>
             <p>Orders Today</p>
         </div>
       </div>
@@ -208,7 +208,7 @@
       <div class="stat-card">
         <div class="stat-icon bg-danger-subtle text-danger"><i class="bi bi-box-seam"></i></div>
         <div class="stat-info">
-            <h3><?php echo (int)($low_stock ?? 0); ?></h3>
+            <h5 class="fw-bold"><?php echo (int)($low_stock ?? 0); ?></h5>
             <p>Low Stock</p>
         </div>
       </div>
