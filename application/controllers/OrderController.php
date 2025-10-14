@@ -263,7 +263,38 @@ class OrderController extends CI_Controller {
             return;
         }
 
-        echo json_encode(['success' => true, 'order' => $order, 'csrf_token_name' => $this->security->get_csrf_token_name(), 'csrf_hash' => $this->security->get_csrf_hash()]);
+        // Also include order details (items) for convenience
+        $details = $this->OrderModel->get_order_details($id);
+
+        // Enrich each detail row with the menu item's image (if available)
+        // Prefer the image stored in `menu_tbl.image` (menu master table). If not present, fallback to `tbl_menu_items.image`.
+        if (!empty($details) && is_array($details)) {
+            foreach ($details as &$d) {
+                $d['image'] = '';
+                if (!empty($d['menu_id'])) {
+                    // primary source: menu_tbl
+                    $m = $this->db->get_where('menu_tbl', ['menu_id' => $d['menu_id']])->row_array();
+                    if ($m && !empty($m['image'])) {
+                        $d['image'] = $m['image'];
+                    } else {
+                        // fallback: tbl_menu_items may also store an image (or map back to a menu row)
+                        $tmi = $this->db->get_where('tbl_menu_items', ['menu_id' => $d['menu_id']])->row_array();
+                        if ($tmi && !empty($tmi['image'])) {
+                            $d['image'] = $tmi['image'];
+                        }
+                    }
+                }
+            }
+            unset($d);
+        }
+
+        echo json_encode([
+            'success' => true,
+            'order' => $order,
+            'details' => $details,
+            'csrf_token_name' => $this->security->get_csrf_token_name(),
+            'csrf_hash' => $this->security->get_csrf_hash()
+        ]);
     }
 
     /**

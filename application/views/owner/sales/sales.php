@@ -104,6 +104,28 @@
         </div>
     </div>
 
+    <!-- Year Selector for Monthly Chart -->
+    <div class="mb-3 d-flex justify-content-end">
+        <label class="me-2 align-self-center">Year</label>
+        <select id="chartYearSelect" class="form-select form-select-sm" style="width:120px;">
+            <?php
+            $currentYear = (int)date('Y');
+            // Determine earliest year from provided data if available, else default to current year
+            $earliest = $currentYear;
+            if (!empty($year_range) && is_array($year_range)) {
+                $earliest = min(array_map('intval', $year_range));
+            } elseif (!empty($monthly_chart) && !empty($monthly_chart['years']) && is_array($monthly_chart['years'])) {
+                $earliest = min(array_map('intval', $monthly_chart['years']));
+            }
+            $start = $earliest;
+            for ($y = $start; $y <= $currentYear; $y++) {
+                $sel = ($y === $currentYear) ? ' selected' : '';
+                echo "<option value=\"{$y}\"{$sel}>{$y}</option>";
+            }
+            ?>
+        </select>
+    </div>
+
     <!-- Stat Cards -->
     <div class="row g-4 mb-4">
         <div class="col-lg-3 col-md-6">
@@ -174,20 +196,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const categorySalesData = <?php echo json_encode([ 'labels' => $category_sales['labels'] ?? [], 'data' => $category_sales['data'] ?? [] ]); ?>;
 
     // --- Chart 1: Donut Chart ---
-    new Chart(document.getElementById('categoryDonutChart'), {
-        type: 'doughnut',
-        data: {
-            labels: categorySalesData.labels || [],
-            datasets: [{
-                data: categorySalesData.data || [],
-                backgroundColor: ['#663399', '#9370DB', '#BA55D3', '#C68EFD', '#A569BD', '#D7BDE2'],
-                borderColor: '#ffffff',
-                borderWidth: 3,
-                hoverOffset: 8
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, pointStyle: 'circle' } } } }
-    });
+    // Ensure categories include all known categories (fill zeros if missing)
+    (function() {
+        let labels = categorySalesData.labels || [];
+        let values = categorySalesData.data || [];
+        // If controller provided a full category list, use it and map values
+        <?php if (!empty($all_categories) && is_array($all_categories)): ?>
+            const fullCats = <?php echo json_encode(array_values($all_categories)); ?>;
+            // build a map from provided labels to values
+            const map = {};
+            (labels || []).forEach((lab, i) => { map[String(lab)] = values[i] || 0; });
+            // produce arrays in fullCats order, filling zeros
+            labels = fullCats;
+            values = fullCats.map(c => map.hasOwnProperty(c) ? map[c] : 0);
+        <?php endif; ?>
+
+        new Chart(document.getElementById('categoryDonutChart'), {
+            type: 'doughnut',
+            data: {
+                labels: labels || [],
+                datasets: [{
+                    data: values || [],
+                    backgroundColor: ['#663399', '#9370DB', '#BA55D3', '#C68EFD', '#A569BD', '#D7BDE2', '#E8DAEF', '#F5EEF8', '#D1C4E9'],
+                    borderColor: '#ffffff',
+                    borderWidth: 3,
+                    hoverOffset: 8
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, pointStyle: 'circle' } } } }
+        });
+    })();
 
     // --- Chart 2: Interactive Bar Chart ---
     const barCtx = document.getElementById('ordersBarChart');
@@ -201,7 +239,34 @@ document.addEventListener('DOMContentLoaded', function() {
         let labels = [], values = [];
         if (period === 'daily' && dailyOrdersData) { labels = dailyOrdersData.labels; values = dailyOrdersData.data; }
         else if (period === 'weekly' && weeklyOrdersData) { labels = weeklyOrdersData.labels; values = weeklyOrdersData.data; }
-        else if (period === 'monthly' && monthlyOrdersData) { labels = monthlyOrdersData.labels; values = monthlyOrdersData.data; }
+        else if (period === 'monthly') {
+            // For monthly, always show Jan..Dec. Normalize server data into 12 buckets.
+            const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            labels = monthLabels;
+            // monthlyOrdersData may come as { labels: [...], data: [...] } or as an object keyed by year
+            const selectedYear = Number(document.getElementById('chartYearSelect').value || (new Date()).getFullYear());
+            // If server provided a mapping per year, prefer that
+            let yearData = null;
+            if (typeof monthlyOrdersData === 'object' && monthlyOrdersData !== null && !Array.isArray(monthlyOrdersData) && monthlyOrdersData.by_year) {
+                yearData = monthlyOrdersData.by_year[selectedYear] || null;
+            }
+            if (!yearData && monthlyOrdersData && Array.isArray(monthlyOrdersData.data)) {
+                // try to map by labels if labels exist; otherwise assume data is 12-length
+                if (Array.isArray(monthlyOrdersData.labels) && monthlyOrdersData.labels.length === monthlyOrdersData.data.length) {
+                    // create a 12-length array and fill by matching month names/index
+                    const tmp = new Array(12).fill(0);
+                    monthlyOrdersData.labels.forEach((lab, idx) => {
+                        const m = monthLabels.findIndex(x => x.toLowerCase().startsWith(String(lab).toLowerCase().substr(0,3)));
+                        if (m >= 0) tmp[m] = monthlyOrdersData.data[idx] || 0;
+                    });
+                    yearData = tmp;
+                } else if (monthlyOrdersData.data.length === 12) {
+                    yearData = monthlyOrdersData.data;
+                }
+            }
+            // fallback empty 12 zeros
+            values = yearData || new Array(12).fill(0);
+        }
         ordersChart.data.labels = labels || [];
         ordersChart.data.datasets[0].data = values || [];
         ordersChart.update();
@@ -217,6 +282,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     updateBarChart('monthly'); // Initial load
+
+    // Year selector: when changed, refresh monthly chart (if monthly selected)
+    const yearSelect = document.getElementById('chartYearSelect');
+    if (yearSelect) {
+        yearSelect.addEventListener('change', function(){
+            const activeBtn = filterButtons.querySelector('.active');
+            const period = activeBtn ? activeBtn.dataset.period : 'monthly';
+            updateBarChart(period);
+        });
+    }
 
     // Export to Excel handler
     document.querySelectorAll('.export-excel').forEach(btn => {

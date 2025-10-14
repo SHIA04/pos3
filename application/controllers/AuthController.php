@@ -19,11 +19,23 @@ class AuthController extends CI_Controller {
     // ✅ SIGNUP
     // ==============================
     public function signup() {
+        // If already logged in, send to appropriate dashboard
+        if ($this->session->userdata('logged_in')) {
+            $role = $this->session->userdata('role') ?: 'staff';
+            $redirectPath = ($role === 'owner' ? 'owner/dashboard' : 'staff/dashboard');
+            return redirect($redirectPath);
+        }
         $this->load->view('auth/signup');
     }
 
     public function register()
     {
+        // If already logged in, don't allow registration flow
+        if ($this->session->userdata('logged_in')) {
+            $role = $this->session->userdata('role') ?: 'staff';
+            $redirectPath = ($role === 'owner' ? 'owner/dashboard' : 'staff/dashboard');
+            return redirect($redirectPath);
+        }
         if ($this->input->method() !== 'post') {
             show_error('Invalid request method.', 405);
         }
@@ -154,11 +166,35 @@ class AuthController extends CI_Controller {
     // ✅ LOGIN
     // ==============================
     public function login() {
+        // If already logged in, redirect to dashboard
+        if ($this->session->userdata('logged_in')) {
+            $role = $this->session->userdata('role') ?: 'staff';
+            $redirectPath = ($role === 'owner' ? 'owner/dashboard' : 'staff/dashboard');
+            return redirect($redirectPath);
+        }
         $this->load->view('auth/login');
     }
 
     public function process_login()
     {
+        // If the user is already logged in, return them to their dashboard
+        if ($this->session->userdata('logged_in')) {
+            $role = $this->session->userdata('role') ?: 'staff';
+            $redirectPath = ($role === 'owner' ? 'owner/dashboard' : 'staff/dashboard');
+            // If AJAX/fetch, respond with JSON redirect, else simple redirect
+            $accept = $this->input->get_request_header('Accept', TRUE);
+            $isAjax = $this->input->is_ajax_request() || (is_string($accept) && strpos($accept, 'application/json') !== false);
+            if ($isAjax) {
+                return $this->output->set_content_type('application/json')->set_output(json_encode([
+                    'status' => 'success',
+                    'message' => 'Already logged in',
+                    'redirect' => site_url($redirectPath),
+                    'csrf_token_name' => $this->security->get_csrf_token_name(),
+                    'csrf_hash' => $this->security->get_csrf_hash()
+                ]));
+            }
+            return redirect($redirectPath);
+        }
         if (strtoupper($this->input->method()) !== 'POST') {
             show_error('Method Not Allowed', 405);
         }

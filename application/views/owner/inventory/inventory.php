@@ -37,8 +37,8 @@
     body {
       margin: 0;
       font-family: 'Poppins', sans-serif;
-      background-color: var(--light-bg);
-      color: var(--text-dark);
+      background-color: ivory;
+      color: #593b8c; /* Slightly softer purple for text */
     }
 
     /* --- Sidebar (Unchanged) --- */
@@ -115,8 +115,13 @@
       margin: 0;
     }
 
-    /* --- Table Styling --- */
-    .table { border-collapse: separate; border-spacing: 0 5px; }
+    /* ======================================= */
+    /* == START: STEADY TABLE STYLES        == */
+    /* ======================================= */
+    .table { 
+        width: 100%;
+        border-collapse: collapse; /* Gisumpay ang mga border */
+    }
     .table thead th {
         color: var(--text-muted);
         font-weight: 600;
@@ -124,24 +129,28 @@
         font-size: 0.8rem;
         letter-spacing: 0.5px;
         border: none;
+        border-bottom: 2px solid var(--border-color); /* Linya sa ubos sa header */
         padding: 1rem 1.25rem;
     }
     .table tbody tr {
-        border-radius: 10px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.2s ease; /* Epekto sa hover */
     }
     .table tbody tr:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.07);
-        background-color: var(--card-bg); /* Ensure background stays white on hover */
+        background-color: var(--light-bg); /* Color kung i-hover */
     }
     .table tbody td {
         vertical-align: middle;
         padding: 1rem 1.25rem;
         border: none;
+        border-bottom: 1px solid var(--border-color); /* Linya sa tunga sa kada row */
+    }
+    .table tbody tr:last-child td {
+        border-bottom: none; /* Tanggalon ang linya sa pinaka-ubos nga row */
     }
     .table .item-name { font-weight: 600; color: var(--primary-color); }
+    /* ======================================= */
+    /* ==  END: STEADY TABLE STYLES         == */
+    /* ======================================= */
 
     /* --- Modern Status Badges --- */
     .status-badge {
@@ -164,7 +173,7 @@
 </head>
 <body>
 
-<!-- Sidebar (HTML Unchanged) -->
+<!-- Sidebar -->
 <div class="sidebar d-none d-lg-flex flex-column">
   <h1><b>OWNER DASHBOARD</b></h1>
   <nav>
@@ -181,21 +190,46 @@
 <!-- Main Content -->
 <div class="content">
 
-    <!-- Page Header (HTML Unchanged) -->
     <div class="page-header">
         <div class="title">
             <h1>Inventory</h1>
             <p>Track and manage your stock levels.</p>
         </div>
     </div>
+  <?php
+  // Compute stat counts locally if controller didn't provide them.
+  if (!isset($in_stock_count) || !isset($low_stock_count) || !isset($out_of_stock_count)) {
+    $in_stock_count = isset($in_stock_count) ? $in_stock_count : 0;
+    $low_stock_count = isset($low_stock_count) ? $low_stock_count : 0;
+    $out_of_stock_count = isset($out_of_stock_count) ? $out_of_stock_count : 0;
 
-    <!-- Stat Cards (Example Placeholders) -->
+    if (!empty($inventory_items) && is_array($inventory_items)) {
+      // Recompute from the provided items using the rule: low stock = stock_quantity <= 5 (1..5)
+      $in_stock_count = 0;
+      $low_stock_count = 0;
+      $out_of_stock_count = 0;
+      foreach ($inventory_items as $it) {
+        $qty = isset($it['stock_quantity']) ? (int)$it['stock_quantity'] : 0;
+        if ($qty === 0) {
+          $out_of_stock_count++;
+        } elseif ($qty > 0 && $qty <= 5) {
+          $low_stock_count++;
+        } else { // qty > 5
+          $in_stock_count++;
+        }
+      }
+    }
+  }
+
+  ?>
+
+  <!-- Stat Cards -->
     <div class="row g-4 mb-5">
         <div class="col-md-4">
             <div class="stat-card">
                 <div class="icon-box bg-success"><i class="bi bi-check2-circle"></i></div>
                 <div>
-                    <h3><?= isset($in_stock_count) ? $in_stock_count : '0'; ?></h3>
+          <h3><?= (int)$in_stock_count; ?></h3>
                     <p>Items In Stock</p>
                 </div>
             </div>
@@ -204,7 +238,7 @@
             <div class="stat-card">
                 <div class="icon-box bg-warning"><i class="bi bi-exclamation-triangle"></i></div>
                 <div>
-                    <h3><?= isset($low_stock_count) ? $low_stock_count : '0'; ?></h3>
+          <h3><?= (int)$low_stock_count; ?></h3>
                     <p>Items with Low Stock</p>
                 </div>
             </div>
@@ -213,7 +247,7 @@
             <div class="stat-card">
                 <div class="icon-box bg-danger"><i class="bi bi-x-circle"></i></div>
                 <div>
-                    <h3><?= isset($out_of_stock_count) ? $out_of_stock_count : '0'; ?></h3>
+          <h3><?= (int)$out_of_stock_count; ?></h3>
                     <p>Items Out of Stock</p>
                 </div>
             </div>
@@ -224,7 +258,6 @@
     <div class="inventory-panel">
         <div class="panel-header">
           <h4>All Items</h4>
-          <!-- You can add a search bar here if needed in the future -->
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle">
@@ -247,9 +280,12 @@
                         <td class="text-center"><strong><?php echo (int)$it['stock_quantity']; ?></strong></td>
                         <td><?php echo '₱' . number_format((float)$it['price'], 2); ?></td>
                         <td class="text-center">
-                          <?php if (!empty($it['stock_quantity']) && $it['stock_quantity'] > 5): ?>
+                          <?php
+                            $qty = isset($it['stock_quantity']) ? (int)$it['stock_quantity'] : 0;
+                            if ($qty > 5):
+                          ?>
                             <span class="status-badge in-stock">In Stock</span>
-                          <?php elseif (!empty($it['stock_quantity']) && $it['stock_quantity'] <= 5 && $it['stock_quantity'] > 0): ?>
+                          <?php elseif ($qty > 0 && $qty <= 5): ?>
                             <span class="status-badge low-stock">Low Stock</span>
                           <?php else: ?>
                             <span class="status-badge out-of-stock">Out of Stock</span>
@@ -291,7 +327,7 @@
     </footer>
 </div>
 
-<!-- All Modals and Scripts remain unchanged to preserve functionality -->
+<!-- Modals -->
 <!-- Restock Item Modal -->
 <div class="modal fade" id="restockItemModal" tabindex="-1">
   <div class="modal-dialog">
@@ -330,16 +366,36 @@
   </div>
 </div>
 
-<!-- Inventory Details Modal -->
+<!-- Inventory Details Modal with Date Filter -->
 <div class="modal fade" id="inventoryDetailsModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Inventory Details</h5>
+        <h5 class="modal-title">Inventory History</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div id="inventoryDetailsContent"><p class="text-muted">Loading...</p></div>
+    <div class="row g-2 align-items-end mb-3 pb-3 border-bottom">
+      <div class="col-sm-4">
+        <label for="startDateFilter" class="form-label form-label-sm">Start Date</label>
+        <input type="date" class="form-control form-control-sm" id="startDateFilter">
+      </div>
+      <div class="col-sm-4">
+        <label for="endDateFilter" class="form-label form-label-sm">End Date</label>
+        <input type="date" class="form-control form-control-sm" id="endDateFilter">
+      </div>
+      <div class="col-sm-2 d-grid">
+        <button class="btn btn-primary btn-sm w-100" id="applyInventoryFilterBtn">
+          <i class="bi bi-funnel-fill"></i> Filter
+        </button>
+      </div>
+      <div class="col-sm-2 d-grid">
+        <button class="btn btn-outline-danger btn-sm w-100" id="clearInventoryFilterBtn" title="Clear filters">
+          <i class="bi bi-x-circle"></i> Clear
+        </button>
+      </div>
+    </div>
+        <div id="inventoryDetailsContent"><p class="text-muted text-center p-4">Loading history...</p></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -391,30 +447,26 @@
     </div>
 </div>
 
-<!-- Scripts (Unchanged) -->
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const restockModal = document.getElementById('restockItemModal');
-    restockModal.addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget;
-        const itemId = button.getAttribute('data-item-id');
-        const itemName = button.getAttribute('data-item-name');
-        const currentStock = button.getAttribute('data-current-stock');
-        const modalTitle = restockModal.querySelector('.modal-title');
-        const itemNameElement = restockModal.querySelector('#restock_item_name');
-        const currentStockInput = restockModal.querySelector('#restock_current_stock');
-        const itemIdInput = restockModal.querySelector('#restock_item_id');
-        const quantityToAddInput = restockModal.querySelector('#quantity_to_add');
-        modalTitle.textContent = 'Restock: ' + itemName;
-        itemNameElement.textContent = itemName;
-        currentStockInput.value = currentStock;
-        itemIdInput.value = itemId;
-        quantityToAddInput.value = '';
-        quantityToAddInput.focus();
-    });
-
+    // --- CSRF TOKEN MANAGEMENT ---
+    let csrfName = '<?= $this->security->get_csrf_token_name(); ?>';
+    let csrfHash = '<?= $this->security->get_csrf_hash(); ?>';
+    const updateCsrf = (name, hash) => {
+        csrfName = name;
+        csrfHash = hash;
+        const csrfField = document.getElementById('csrf_token_field_inventory_edit');
+        if (csrfField) {
+            csrfField.name = name;
+            csrfField.value = hash;
+        }
+    };
+    
+    // --- NOTIFICATIONS ---
+    alertify.set('notifier','position', 'top-right');
     <?php if($this->session->flashdata('success')): ?>
         alertify.success("<?= $this->session->flashdata('success') ?>");
     <?php endif; ?>
@@ -422,116 +474,188 @@ document.addEventListener('DOMContentLoaded', function() {
         alertify.error("<?= $this->session->flashdata('error') ?>");
     <?php endif; ?>
 
-    document.querySelectorAll('.edit-inv-btn').forEach(function(btn){
-    btn.addEventListener('click', function(e){
-        const id = this.getAttribute('data-item-id');
-        if (!id) return;
-        fetch('<?php echo site_url('owner/inventory/get'); ?>?id=' + encodeURIComponent(id))
-        .then(r => r.json())
-        .then(json => {
-            if (!json.success) { alert('Item not found'); return; }
-            const item = json.item;
-            if (json.csrf_token_name && json.csrf_hash) {
-            var csrfField = document.getElementById('csrf_token_field_inventory_edit');
-            if (csrfField) {
-                csrfField.name = json.csrf_token_name;
-                csrfField.value = json.csrf_hash;
-            }
-            }
-            document.getElementById('edit_item_id').value = item.item_id;
-            document.getElementById('edit_item_name').value = item.item_name || '';
-            document.getElementById('edit_price').value = item.price || '';
-            document.getElementById('edit_category').value = item.category || '';
-            document.getElementById('edit_description').value = item.description || '';
-            var editModal = new bootstrap.Modal(document.getElementById('editItemModal'));
-            editModal.show();
-        }).catch(err => { console.error(err); alert('Failed to fetch item'); });
-    });
+    // --- RESTOCK MODAL ---
+    const restockModal = document.getElementById('restockItemModal');
+    if (restockModal) {
+        restockModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const itemId = button.getAttribute('data-item-id');
+            const itemName = button.getAttribute('data-item-name');
+            const currentStock = button.getAttribute('data-current-stock');
+            restockModal.querySelector('.modal-title').textContent = 'Restock: ' + itemName;
+            restockModal.querySelector('#restock_item_name').textContent = itemName;
+            restockModal.querySelector('#restock_current_stock').value = currentStock;
+            restockModal.querySelector('#restock_item_id').value = itemId;
+            restockModal.querySelector('#quantity_to_add').value = '';
+            restockModal.querySelector('#quantity_to_add').focus();
+        });
+    }
+
+    // --- EDIT ITEM MODAL ---
+    document.querySelectorAll('.edit-inv-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-item-id');
+            fetch(`<?php echo site_url('owner/inventory/get'); ?>?id=${id}`)
+                .then(r => r.json())
+                .then(json => {
+                    if (!json.success) { alertify.error('Item not found'); return; }
+                    if (json.csrf_token_name && json.csrf_hash) updateCsrf(json.csrf_token_name, json.csrf_hash);
+                    const item = json.item;
+                    document.getElementById('edit_item_id').value = item.item_id;
+                    document.getElementById('edit_item_name').value = item.item_name || '';
+                    document.getElementById('edit_price').value = item.price || '';
+                    document.getElementById('edit_category').value = item.category || '';
+                    document.getElementById('edit_description').value = item.description || '';
+                    new bootstrap.Modal(document.getElementById('editItemModal')).show();
+                }).catch(() => alertify.error('Failed to fetch item data.'));
+        });
     });
 
     const editForm = document.getElementById('editItemForm');
     if (editForm) {
-    editForm.addEventListener('submit', function(e){
-        e.preventDefault();
-        const fd = new FormData(editForm);
-        fetch('<?php echo site_url('owner/inventory/update'); ?>', { method: 'POST', body: fd })
-        .then(r => r.json())
-        .then(json => {
-            if (!json.success) { alert(json.message || 'Update failed'); return; }
-            if (json.csrf_token_name && json.csrf_hash) {
-            var csrfField = document.getElementById('csrf_token_field_inventory_edit');
-            if (csrfField) {
-                csrfField.name = json.csrf_token_name;
-                csrfField.value = json.csrf_hash;
-            }
-            }
-            const id = json.item.item_id;
-            const rows = document.querySelectorAll('button.edit-inv-btn[data-item-id="' + id + '"]');
-            if (rows.length) {
-            const btn = rows[0];
-            const tr = btn.closest('tr');
-            if (tr) {
-                tr.querySelector('.item-name').textContent = json.item.item_name;
-                tr.querySelector('td:nth-child(2)').textContent = json.item.category || '-';
-                tr.querySelector('td:nth-child(4)').textContent = '₱' + parseFloat(json.item.price).toFixed(2);
-                }
-            }
-            var editModalEl = document.getElementById('editItemModal');
-            var modal = bootstrap.Modal.getInstance(editModalEl);
-            if (modal) modal.hide();
-            alertify.success('Item updated');
-        }).catch(err => { console.error(err); alert('Failed to update'); });
-    });
+        editForm.addEventListener('submit', function(e){
+            e.preventDefault();
+            fetch('<?php echo site_url('owner/inventory/update'); ?>', { method: 'POST', body: new FormData(editForm) })
+                .then(r => r.json())
+                .then(json => {
+                    if (!json.success) { alertify.error(json.message || 'Update failed'); return; }
+                    if (json.csrf_token_name && json.csrf_hash) updateCsrf(json.csrf_token_name, json.csrf_hash);
+                    alertify.success('Item updated successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('editItemModal')).hide();
+                    setTimeout(() => window.location.reload(), 800);
+                }).catch(() => alertify.error('An error occurred during update.'));
+        });
     }
 
-  const detailsModal = document.getElementById('inventoryDetailsModal');
-  const detailsContent = document.getElementById('inventoryDetailsContent');
-  if (detailsModal) {
-    detailsModal.addEventListener('show.bs.modal', function(event){
-    const button = event.relatedTarget;
-    const itemId = button && button.getAttribute('data-item-id');
-    const row = button ? button.closest('tr') : null;
-    const itemName = row ? (row.querySelector('.item-name') ? row.querySelector('.item-name').textContent : '') : '';
-    const titleEl = document.querySelector('#inventoryDetailsModal .modal-title');
-    if (titleEl) titleEl.textContent = itemName ? `Inventory Details: ${itemName}` : 'Inventory Details';
-    if (!itemId) { detailsContent.innerHTML = '<p class="text-muted">No item specified.</p>'; return; }
-    detailsContent.innerHTML = '<p class="text-muted">Loading...</p>';
-    fetch('<?= site_url('DashboardController/inventory_details') ?>?item_id=' + encodeURIComponent(itemId))
-        .then(r => r.json())
-        .then(json => {
-        if (!json || !json.success) { detailsContent.innerHTML = '<p class="text-danger">Failed to load details.</p>'; return; }
-        const rows = json.details || [];
-        if (rows.length === 0) { detailsContent.innerHTML = '<p class="text-muted">No inventory activity found for this item.</p>'; return; }
-        let html = `<div class="table-responsive"><table class="table table-striped table-hover"><thead class="table-light"><tr><th>#</th><th>Action</th><th class="text-center">Quantity</th><th>Date & Time</th></tr></thead><tbody>`;
-        rows.forEach((r, idx) => {
-            const actionRaw = (r.action || '').toString();
-            const action = actionRaw.toLowerCase();
-            const qty = (r.quantity !== undefined && r.quantity !== null) ? Number(r.quantity) : null;
-            let actionBadge = `<span class="badge text-bg-secondary">${(r.action || 'UPDATE').toString().toUpperCase()}</span>`;
-            let qtyHtml = 'N/A';
-            if (action === 'in' || action === 'add' || action === '+') {
-            actionBadge = '<span class="badge text-bg-success">IN</span>';
-            qtyHtml = qty !== null ? `<strong class="text-success">+${Math.abs(qty)}</strong>` : 'N/A';
-            } else if (action === 'out' || action === 'remove' || action === '-') {
-            actionBadge = '<span class="badge text-bg-danger">OUT</span>';
-            qtyHtml = qty !== null ? `<strong class="text-danger">-${Math.abs(qty)}</strong>` : 'N/A';
-            } else {
-            actionBadge = `<span class="badge text-bg-secondary">${(r.action || 'UPDATE').toString().toUpperCase()}</span>`;
-            qtyHtml = qty !== null ? `<strong>${qty}</strong>` : 'N/A';
+    // ===============================================
+    // == START: INVENTORY DETAILS MODAL & FILTER LOGIC (FIXED) ==
+    // ===============================================
+    const detailsModal = document.getElementById('inventoryDetailsModal');
+    const detailsContent = document.getElementById('inventoryDetailsContent');
+    const filterBtn = document.getElementById('applyInventoryFilterBtn');
+    const startDateInput = document.getElementById('startDateFilter');
+    const endDateInput = document.getElementById('endDateFilter');
+
+  async function fetchAndDisplayDetails(itemId, startDate = '', endDate = '') {
+        if (!itemId) {
+            detailsContent.innerHTML = '<p class="text-muted text-center p-4">No item specified.</p>';
+            return;
+        }
+        detailsContent.innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+
+        let url = `<?= site_url('DashboardController/inventory_details') ?>?item_id=${encodeURIComponent(itemId)}`;
+        if (startDate) url += `&start_date=${encodeURIComponent(startDate)}`;
+        if (endDate) url += `&end_date=${encodeURIComponent(endDate)}`;
+
+        try {
+            const response = await fetch(url);
+            const json = await response.json();
+
+            if (!json || !json.success) {
+                detailsContent.innerHTML = '<p class="text-danger text-center p-4">Failed to load details.</p>';
+                return;
             }
-            const qtyVal = (r.quantity !== undefined && r.quantity !== null && r.quantity !== '') ? Number(r.quantity) : 0;
-            const rawDate = r.created_at || r.createdAt || r.created || null;
-            // Format the timestamp in Philippine time (Asia/Manila)
-            const eventDate = rawDate ? new Date(rawDate).toLocaleString('en-PH', {
-            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Manila'
-            }) : 'Unknown';
-            html += `<tr><td>${idx + 1}</td><td>${actionBadge}</td><td class="text-center">${qtyHtml || (action === 'in' ? `<strong class="text-success">+${Math.abs(qtyVal)}</strong>` : `<strong class="text-danger">-${Math.abs(qtyVal)}</strong>`)}</td><td>${eventDate}</td></tr>`;
+
+      const rows = json.details || [];
+
+      // If the server returned no rows at all, show empty message early
+      if (rows.length === 0) {
+        detailsContent.innerHTML = '<p class="text-muted text-center p-4">Wala pay history nga na-record para aning item.</p>';
+        return;
+      }
+
+      // Normalize filter dates to local date strings (YYYY-MM-DD) for comparison
+      const toDateKey = (iso) => {
+        if (!iso) return null;
+        // Accept iso-ish strings; create Date and get local yyyy-mm-dd
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return null;
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+      const startKey = toDateKey(startDate);
+      const endKey = toDateKey(endDate);
+
+      // Filter rows by comparing only the date portion of created_at (local time)
+      const filtered = rows.filter(r => {
+        if (!r.created_at) return false;
+        const d = new Date(r.created_at);
+        if (isNaN(d.getTime())) return false;
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if (startKey && key < startKey) return false;
+        if (endKey && key > endKey) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        // No matching rows after applying date filters
+        detailsContent.innerHTML = '<p class="text-muted text-center p-4">No data found in the inventory for the selected dates.</p>';
+        return;
+      }
+
+      let html = `<div class="table-responsive"><table class="table table-sm table-striped"><thead class="table-light"><tr><th>Action</th><th class="text-center">Quantity</th><th>Date & Time</th></tr></thead><tbody>`;
+      filtered.forEach(r => {
+        const action = (r.action || '').toLowerCase();
+        const qty = r.quantity !== null ? Number(r.quantity) : 0;
+        let actionBadge, qtyHtml;
+
+        if (['in', 'add', '+'].includes(action)) {
+          actionBadge = '<span class="badge text-bg-success">IN (Restock)</span>';
+          qtyHtml = `<strong class="text-success">+${Math.abs(qty)}</strong>`;
+        } else if (['out', 'remove', '-'].includes(action)) {
+          actionBadge = '<span class="badge text-bg-danger">OUT (Sale)</span>';
+          qtyHtml = `<strong class="text-danger">-${Math.abs(qty)}</strong>`;
+        } else {
+          actionBadge = `<span class="badge text-bg-secondary">${(r.action || 'UPDATE').toUpperCase()}</span>`;
+          qtyHtml = `<strong>${qty}</strong>`;
+        }
+        const eventDate = r.created_at ? new Date(r.created_at).toLocaleString('en-PH', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Unknown';
+        html += `<tr><td>${actionBadge}</td><td class="text-center">${qtyHtml}</td><td>${eventDate}</td></tr>`;
+      });
+      html += '</tbody></table></div>';
+      detailsContent.innerHTML = html;
+        } catch (err) {
+            console.error(err);
+            detailsContent.innerHTML = '<p class="text-danger text-center p-4">A network error occurred.</p>';
+        }
+    }
+
+    if (detailsModal) {
+        detailsModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const itemId = button ? button.getAttribute('data-item-id') : null;
+            const itemName = button ? button.closest('tr').querySelector('.item-name').textContent : '';
+
+            detailsModal.querySelector('.modal-title').textContent = `History: ${itemName}`;
+            startDateInput.value = '';
+            endDateInput.value = '';
+            detailsModal.dataset.itemId = itemId || '';
+            
+            fetchAndDisplayDetails(itemId);
         });
-        html += '</tbody></table></div>';
-        detailsContent.innerHTML = html;
-        }).catch(err => { console.error(err); detailsContent.innerHTML = '<p class="text-danger">Network error.</p>'; });
-    });
-  }
+
+        if (filterBtn) {
+            filterBtn.addEventListener('click', function() {
+                const itemId = detailsModal.dataset.itemId;
+                fetchAndDisplayDetails(itemId, startDateInput.value, endDateInput.value);
+            });
+        }
+    const clearBtn = document.getElementById('clearInventoryFilterBtn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function() {
+        startDateInput.value = '';
+        endDateInput.value = '';
+        const itemId = detailsModal.dataset.itemId;
+        // reload unfiltered history
+        fetchAndDisplayDetails(itemId);
+      });
+    }
+    }
+    // ===============================================
+    // ==  END: INVENTORY DETAILS MODAL & FILTER LOGIC  ==
+    // ===============================================
 });
 </script>
 

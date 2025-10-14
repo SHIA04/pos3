@@ -153,13 +153,116 @@
         border-radius: 50%;
     }
 
-    /* Order modal (unified with staff) */
-    .order-summary-panel { background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 0.75rem; }
-    #order-summary-list { list-style: none; padding: 0; max-height: 250px; overflow-y: auto; }
-    #order-summary-list li { padding: 1rem; border-bottom: 1px solid #f0f0f0; }
-    .remove-btn { color: #dc3545; font-size: 0.8rem; font-weight: 500; }
-    .order-summary-footer { background-color: #f8f9fa; padding: 1rem; border-top: 1px solid #dee2e6; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; }
-    #grand-total { font-size: 1.5rem; font-weight: 700; color: rebeccapurple; }
+    /* --- Styles for View Order Modal --- */
+    .view-order-header {
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+      padding: 1rem 1.5rem;
+    }
+    .info-card {
+      display: flex;
+      align-items: center;
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid #eee;
+      height: 100%;
+    }
+    .info-card i { font-size: 2rem; color: rebeccapurple; margin-right: 1rem; opacity: 0.7; }
+    .info-card-title { font-size: 0.75rem; font-weight: 600; color: #8c7aa8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-card-text { font-size: 1rem; font-weight: 500; color: #593b8c; margin: 0; }
+    .order-details-table-container { max-height: 300px; overflow-y: auto; }
+    #viewOrderDetailsTbody tr { border-bottom: 1px solid #f0f0f0; }
+    #viewOrderDetailsTbody tr:last-child { border-bottom: none; }
+    #viewOrderDetailsTbody td { padding-top: 1rem; padding-bottom: 1rem; vertical-align: middle; }
+    .item-image { width: 60px; height: 60px; object-fit: cover; border-radius: 0.5rem; }
+    .item-details .item-name { font-weight: 600; color: #593b8c; }
+    .item-details .item-meta { font-size: 0.85rem; color: #8c7aa8; }
+
+    /* ======================================= */
+    /* == START: CREATE ORDER MODAL STYLES  == */
+    /* ======================================= */
+    #orderModal .modal-body { background-color: #f8f9fa; }
+    .customer-details-panel {
+      background-color: #ffffff;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      border: 1px solid #dee2e6;
+      margin-bottom: 1.5rem;
+    }
+    .menu-panel, .summary-panel {
+      background-color: #ffffff;
+      border-radius: 0.75rem;
+      border: 1px solid #dee2e6;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .panel-header h6 { margin: 0; font-weight: 600; }
+    #menu-list-container {
+      overflow-y: auto;
+      flex-grow: 1;
+      padding: 0.5rem;
+    }
+    #menu-list-container .list-group-item {
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+      border: 1px solid #f0f0f0;
+      transition: all 0.2s ease;
+    }
+    #menu-list-container .list-group-item:hover {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+    }
+    #order-summary-list {
+      list-style: none;
+      padding: 0;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+    #order-summary-list li {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    #order-summary-list li:last-child { border-bottom: none; }
+    .summary-item-details { flex-grow: 1; margin-right: 1rem; }
+    .summary-item-details .name { font-weight: 600; color: #343a40; }
+    .summary-item-details .price { font-size: 0.9rem; color: #6c757d; }
+    .quantity-controls {
+      display: flex;
+      align-items: center;
+      background-color: #f8f9fa;
+      border-radius: 20px;
+      border: 1px solid #dee2e6;
+    }
+    .quantity-controls button {
+      background: transparent;
+      border: none;
+      font-weight: 600;
+      color: rebeccapurple;
+      padding: 0.2rem 0.7rem;
+    }
+    .quantity-display {
+      font-weight: 500;
+      padding: 0 0.5rem;
+      min-width: 25px;
+      text-align: center;
+    }
+    .order-summary-footer {
+      background-color: #f8f9fa;
+      padding: 1.25rem;
+      border-top: 1px solid #dee2e6;
+      border-bottom-left-radius: 0.75rem;
+      border-bottom-right-radius: 0.75rem;
+    }
+    #grand-total { font-size: 1.6rem; font-weight: 700; color: rebeccapurple; }
+    /* ======================================= */
+    /* ==  END: CREATE ORDER MODAL STYLES   == */
+    /* ======================================= */
   </style>
 </head>
 <body>
@@ -210,7 +313,7 @@
                 <thead>
                     <tr>
                         <th>Order ID</th>
-                        <th>Role</th>
+                        <th>Order by</th>
                         <th>Customer</th>
                         <th>Items</th>
                         <th>Total</th>
@@ -253,9 +356,7 @@
                                   </li>
                                   <?php if($order->status != 'Done'): ?>
                                     <?php
-                                      // ================== START: MODIFIED LOGIC ==================
                                       $disablePaid = ($order->status === 'New'); 
-                                      // =================== END: MODIFIED LOGIC ===================
                                     ?>
                                     <li>
                                       <a class="dropdown-item <?= $disablePaid ? 'disabled' : '' ?>" href="<?= $disablePaid ? '#' : site_url('OrderController/mark_done/'.$order->order_id) ?>" <?= $disablePaid ? 'aria-disabled="true" onclick="return false;"' : '' ?>><i class="bi bi-check-lg me-2"></i>Mark as Paid</a>
@@ -282,77 +383,147 @@
     </footer>
 </div>
 
-<!-- All Modals remain unchanged -->
-<!-- Create Order Modal -->
-<div class="modal fade" id="orderModal" tabindex="-1">
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Create New Order</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- All Modals -->
+
+<!-- View Order Modal (Redesigned) -->
+<div class="modal fade" id="viewOrderModal" tabindex="-1" aria-labelledby="viewOrderModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 0.8rem;">
+      <div class="modal-header view-order-header">
+        <div>
+          <h5 class="modal-title" id="viewOrderModalLabel">Order Details</h5>
+          <small id="viewOrderId" class="text-muted"></small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body">
-        <form id="orderForm" action="<?= site_url('OrderController/add_order') ?>" method="post" enctype="multipart/form-data">
-          <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>" id="csrf_token_field_order_add">
-          <div class="row g-3 mb-4">
-            <div class="col-md-6">
-              <label class="form-label">Customer Name</label>
-              <input type="text" name="customer_name" id="customerName" class="form-control" required>
-            </div>
-            <div class="col-md-6 d-flex align-items-end">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="scheduleCheck">
-                <label class="form-check-label" for="scheduleCheck">Schedule for later? (Booking)</label>
+      <div class="modal-body p-4">
+        <div class="row mb-4">
+          <div class="col-sm-6 mb-3 mb-sm-0">
+            <div class="info-card">
+              <i class="bi bi-person-circle"></i>
+              <div>
+                <span class="info-card-title">CUSTOMER</span>
+                <p id="viewCustomerName" class="info-card-text"></p>
               </div>
             </div>
-            <div class="col-12" id="scheduleFields" style="display: none;">
-              <div class="mt-2 row g-3 p-3 bg-light rounded">
-                <div class="col-md-6">
-                  <label class="form-label">Booking Date</label>
-                  <input type="date" id="bookingDate" class="form-control">
+          </div>
+          <div class="col-sm-6">
+            <div class="info-card">
+              <i class="bi bi-tag"></i>
+              <div>
+                <span class="info-card-title">STATUS</span>
+                <div id="viewOrderStatus" class="info-card-text"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h6 class="mb-3 fw-bold">Items Summary</h6>
+        <div class="table-responsive order-details-table-container">
+          <table class="table">
+            <tbody id="viewOrderDetailsTbody"></tbody>
+          </table>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="d-flex justify-content-end">
+            <div class="text-end">
+                <span class="text-muted">Grand Total</span>
+                <div id="viewOrderTotal" class="h3 fw-bolder" style="color: rebeccapurple;"></div>
+            </div>
+        </div>
+
+      </div>
+      <div class="modal-footer border-0" style="padding: 0.75rem 1.5rem;">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 0.5rem;">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================= -->
+<!-- == START: REDESIGNED CREATE ORDER MODAL == -->
+<!-- ======================================= -->
+<div class="modal fade" id="orderModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content" style="border-radius: 1rem;">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Create New Order</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <form id="orderForm" action="<?= site_url('OrderController/add_order') ?>" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>" id="csrf_token_field_order_add">
+          
+          <div class="customer-details-panel">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Customer Name</label>
+                <input type="text" name="customer_name" id="customerName" class="form-control" required placeholder="Enter customer's name">
+              </div>
+              <div class="col-md-6 d-flex align-items-end">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="scheduleCheck">
+                  <label class="form-check-label" for="scheduleCheck">Schedule for later? (Booking)</label>
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label">Booking Time</label>
-                  <input type="time" id="bookingTime" class="form-control">
+              </div>
+              <div class="col-12" id="scheduleFields" style="display: none;">
+                <div class="mt-2 row g-3 p-3 bg-light rounded">
+                  <div class="col-md-6">
+                    <label class="form-label">Booking Date</label>
+                    <input type="date" id="bookingDate" class="form-control">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Booking Time</label>
+                    <input type="time" id="bookingTime" class="form-control">
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+          
           <div class="row g-4">
-            <div class="col-md-5">
-              <h6>Available Menu Items</h6>
-              <div id="menu-list-container" class="list-group border-end pe-2" style="max-height: 400px; overflow-y: auto;">
-                <?php if(isset($menu_items) && !empty($menu_items)): ?>
-                  <?php foreach($menu_items as $m): ?>
-                    <?php $stock = isset($m['stock_quantity']) ? (int)$m['stock_quantity'] : 0; ?>
-                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center menu-list-item"
-                       data-id="<?= (int)$m['menu_id'] ?>"
-                       data-name="<?= htmlspecialchars($m['item_name']) ?>"
-                       data-price="<?= number_format((float)$m['price'],2,'.','') ?>"
-                       data-stock="<?= $stock ?>">
-                      <div class="d-flex align-items-center">
-                        <?= htmlspecialchars($m['item_name']) ?>
-                        <span class="badge rounded-pill ms-2 <?= $stock > 0 ? 'bg-success' : 'bg-secondary' ?>" style="font-size:0.7rem;"><?= $stock > 0 ? 'In Stock' : 'Out of Stock' ?></span>
-                      </div>
-                      <span class="badge bg-primary rounded-pill">₱<?= number_format((float)$m['price'],2) ?></span>
-                    </a>
-                  <?php endforeach; ?>
-                <?php else: ?>
-                  <div class="text-muted small p-2">No menu items available.</div>
-                <?php endif; ?>
+            <div class="col-lg-5">
+              <div class="menu-panel">
+                <div class="panel-header"><h6><i class="bi bi-journal-text me-2"></i>Available Menu Items</h6></div>
+                <div id="menu-list-container" class="list-group list-group-flush">
+                  <?php if(isset($menu_items) && !empty($menu_items)): ?>
+                    <?php foreach($menu_items as $m): ?>
+                      <?php $stock = isset($m['stock_quantity']) ? (int)$m['stock_quantity'] : 0; ?>
+                      <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center menu-list-item"
+                         data-id="<?= (int)$m['menu_id'] ?>"
+                         data-name="<?= htmlspecialchars($m['item_name']) ?>"
+                         data-price="<?= number_format((float)$m['price'],2,'.','') ?>"
+                         data-stock="<?= $stock ?>">
+                        <div>
+                          <?= htmlspecialchars($m['item_name']) ?>
+                          <span class="badge rounded-pill ms-2 small <?= $stock > 0 ? 'text-bg-success' : 'text-bg-secondary' ?>"><?= $stock > 0 ? 'In Stock' : 'Out of Stock' ?></span>
+                        </div>
+                        <span class="fw-bold" style="color: rebeccapurple;">₱<?= number_format((float)$m['price'],2) ?></span>
+                      </a>
+                    <?php endforeach; ?>
+                  <?php else: ?>
+                    <div class="text-muted small p-3 text-center">No menu items available.</div>
+                  <?php endif; ?>
+                </div>
               </div>
             </div>
-            <div class="col-md-7">
-              <h6>Current Order</h6>
-              <div class="order-summary-panel">
-                <ul id="order-summary-list"></ul>
+            
+            <div class="col-lg-7">
+              <div class="summary-panel">
+                <div class="panel-header"><h6><i class="bi bi-basket me-2"></i>Current Order</h6></div>
+                <ul id="order-summary-list">
+                  <!-- Cart items will be rendered here -->
+                </ul>
                 <div class="order-summary-footer d-flex justify-content-between align-items-center">
-                  <span class="fs-5 fw-bold">Grand Total:</span>
+                  <span class="fs-5 fw-bold" style="color:#343a40;">Grand Total:</span>
                   <span id="grand-total">₱0.00</span>
                 </div>
               </div>
             </div>
           </div>
+          
           <input type="hidden" name="total_amount" id="totalAmountInput" value="">
           <input type="hidden" name="scheduled_at" id="scheduledAtInput" value="">
           <div id="orderItemsHidden"></div>
@@ -365,6 +536,10 @@
     </div>
   </div>
 </div>
+<!-- ======================================= -->
+<!-- ==  END: REDESIGNED CREATE ORDER MODAL  == -->
+<!-- ======================================= -->
+
 
 <!-- Edit Order Modal -->
 <div class="modal fade" id="editOrderModal" tabindex="-1" aria-labelledby="editOrderModalLabel" aria-hidden="true">
@@ -425,6 +600,14 @@
     let csrfHash = '<?php echo $this->security->get_csrf_hash(); ?>';
     function updateCsrfFromResponse(json) { if (json && json.csrf_hash) { csrfHash = json.csrf_hash; document.querySelectorAll('input[name="' + csrfName + '"]').forEach(e => e.value = csrfHash); } }
 
+  // Simple HTML escaper for dynamic content
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&"'<>]/g, function (s) {
+      return ({'&':'&amp;','"':'&quot;',"'":"&#39;","<":"&lt;",">":"&gt;"})[s];
+    });
+  }
+
     /**
      * Simple client-side table paginator.
      */
@@ -479,7 +662,6 @@
       tableBody.innerHTML = '<tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
             paginationContainer.innerHTML = '';
             try {
-        // When 'all' is requested, omit the period parameter so server returns all orders
         const url = period === 'all' ? `<?= site_url('OrderController/orders_by_period_ajax') ?>` : `<?= site_url('OrderController/orders_by_period_ajax') ?>?period=${period}`;
         const response = await fetch(url);
                 const data = await response.json();
@@ -489,7 +671,6 @@
                 if (data.success && data.orders.length > 0) {
                     salesDisplay.textContent = `₱${parseFloat(data.sales_total || 0).toFixed(2)}`;
           data.orders.forEach(o => {
-            // Display order_date in Philippine time for consistency
             const orderDate = new Date(o.order_date).toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Manila' });
                         let statusBadge;
                         if (o.status === 'Processing') statusBadge = 'text-bg-warning';
@@ -511,11 +692,10 @@
                                     <button class="btn action-btn dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
                                     <ul class="dropdown-menu dropdown-menu-end">
                                         ${o.status === 'New' ? `<li><a class="dropdown-item start-processing" href="#" data-order-id="${o.order_id}"><i class="bi bi-play-fill me-2"></i>Start Processing</a></li>` : ''}
+                                        <li><a class="dropdown-item view-order" href="#" data-order-id="${o.order_id}"><i class="bi bi-eye-fill me-2"></i>View Details</a></li>
                                         <li><a class="dropdown-item btn-edit-order" href="#" data-id="${o.order_id}" ${o.status === 'Done' ? 'style="pointer-events: none; color: #adb5bd;"' : ''}><i class="bi bi-pencil-fill me-2"></i>Edit</a></li>
                                         ${o.status !== 'Done' ? (() => {
-                                            // ================== START: MODIFIED LOGIC ==================
                                             const disabled = (o.status === 'New');
-                                            // =================== END: MODIFIED LOGIC ===================
                                             return `<li><a class="dropdown-item ${disabled ? 'disabled' : ''}" href="${disabled ? '#' : '<?= site_url('OrderController/mark_done/') ?>'+o.order_id}" ${disabled ? 'aria-disabled="true" onclick="return false;"' : ''}><i class="bi bi-check-lg me-2"></i>Mark as Paid</a></li>`;
                                         })() : ''}
                                         <li><hr class="dropdown-divider"></li>
@@ -547,7 +727,6 @@
             });
         }
         
-        // Initial load for default tab and pagination
         const activeBtn = tablist.querySelector('.nav-link.active');
         if (activeBtn) {
             loadOrdersForPeriod(activeBtn.getAttribute('data-period'));
@@ -555,7 +734,7 @@
             paginateTable(tableBody, paginationContainer, 10);
         }
 
-        // --- CREATE ORDER MODAL LOGIC (Unchanged) ---
+        // --- CREATE ORDER MODAL LOGIC (UPDATED RENDER FUNCTION) ---
         const orderForm = document.getElementById('orderForm');
         if (orderForm) {
             const scheduleCheck = document.getElementById('scheduleCheck');
@@ -568,18 +747,41 @@
             const scheduledAtInput = document.getElementById('scheduledAtInput');
             let cart = new Map();
 
+            // ** UPDATED RENDER CART FUNCTION **
             function renderCart() {
-                orderSummaryList.innerHTML = '';
-                let grandTotal = 0;
-                if (cart.size === 0) { orderSummaryList.innerHTML = '<li class="text-center text-muted py-5"><i class="bi bi-cart3 fs-1"></i><p class="mt-2">Your order is empty</p></li>'; grandTotalDisplay.textContent = '₱0.00'; return; }
-                cart.forEach((item, id) => { const itemSubtotal = item.price * item.quantity; grandTotal += itemSubtotal; const itemHTML = `<li><div class="d-flex justify-content-between"><div><div class="fw-bold">${item.name}</div><small class="text-muted">₱${item.price.toFixed(2)} each</small></div><span class="fw-bold fs-5">₱${itemSubtotal.toFixed(2)}</span></div><div class="d-flex justify-content-between align-items-center mt-2"><div class="quantity-controls"><button type="button" class="btn btn-outline-secondary btn-sm" data-id="${id}" data-action="decrease">-</button><span class="quantity-display mx-2">${item.quantity}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-id="${id}" data-action="increase">+</button></div><button type="button" class="btn btn-link text-danger p-0 remove-btn" data-id="${id}" data-action="remove"><i class="bi bi-trash me-1"></i>Remove</button></div></li>`; orderSummaryList.insertAdjacentHTML('beforeend', itemHTML); });
-                grandTotalDisplay.textContent = '₱' + grandTotal.toFixed(2);
+              orderSummaryList.innerHTML = ''; let grandTotal = 0;
+              if (cart.size === 0) {
+                orderSummaryList.innerHTML = '<li class="text-center text-muted d-flex flex-column justify-content-center align-items-center h-100 p-5"><i class="bi bi-cart3" style="font-size: 4rem;"></i><p class="mt-3">Your order is empty</p><small>Select items from the menu to get started.</small></li>';
+                grandTotalDisplay.textContent = '₱0.00'; return;
+              }
+              cart.forEach((item, id) => {
+                const itemSubtotal = item.price * item.quantity;
+                grandTotal += itemSubtotal;
+                const itemHTML = `
+                  <li class="d-flex align-items-center">
+                    <div class="summary-item-details">
+                      <div class="name">${escapeHtml(item.name)}</div>
+                      <div class="price">₱${item.price.toFixed(2)}</div>
+                    </div>
+                    <div class="quantity-controls me-3">
+                      <button type="button" data-id="${id}" data-action="decrease">-</button>
+                      <span class="quantity-display">${item.quantity}</span>
+                      <button type="button" data-id="${id}" data-action="increase">+</button>
+                    </div>
+                    <div class="fw-bold me-2" style="min-width: 70px; text-align: right;">₱${itemSubtotal.toFixed(2)}</div>
+                    <button type="button" class="btn btn-sm btn-outline-danger border-0" data-id="${id}" data-action="remove"><i class="bi bi-trash"></i></button>
+                  </li>`;
+                orderSummaryList.insertAdjacentHTML('beforeend', itemHTML);
+              });
+              grandTotalDisplay.textContent = '₱' + grandTotal.toFixed(2);
             }
+
             if (menuListContainer) { menuListContainer.addEventListener('click', (e) => { e.preventDefault(); const el = e.target.closest('.menu-list-item'); if (!el) return; const id = parseInt(el.dataset.id); const name = el.dataset.name; const price = parseFloat(el.dataset.price); const stock = parseInt(el.dataset.stock || '0'); if (stock <= 0) { alertify.error('This item is out of stock.'); return; } if (cart.has(id)) { const cur = cart.get(id); if (cur.quantity + 1 > stock) { alertify.error('Cannot add more. Stock limit reached.'); return; } cur.quantity++; } else { cart.set(id, { name, price, quantity: 1, stock }); } renderCart(); }); }
             orderSummaryList.addEventListener('click', (e) => { const t = e.target.closest('button'); if (!t || !t.dataset.id) return; const id = parseInt(t.dataset.id); const action = t.dataset.action; if (!cart.has(id)) return; if (action === 'increase') { const cur = cart.get(id); const stock = cur.stock || parseInt(menuListContainer.querySelector(`.menu-list-item[data-id="${id}"]`)?.dataset?.stock || '0'); if (cur.quantity + 1 > stock) { alertify.error('Cannot increase quantity. Reached stock limit.'); return; } cur.quantity++; } else if (action === 'decrease') (cart.get(id).quantity > 1) ? cart.get(id).quantity-- : cart.delete(id); else if (action === 'remove') cart.delete(id); renderCart(); });
             if (scheduleCheck) { scheduleCheck.addEventListener('change', () => { scheduleFields.style.display = scheduleCheck.checked ? 'block' : 'none'; }); }
             orderForm.addEventListener('submit', function(e) { const customerName = document.getElementById('customerName').value; if (!customerName.trim() || cart.size === 0) { e.preventDefault(); alertify.error('Please enter a customer name and add items.'); return; } const isScheduled = scheduleCheck && scheduleCheck.checked; const bookingDate = document.getElementById('bookingDate').value; const bookingTime = document.getElementById('bookingTime').value; if (isScheduled && (!bookingDate || !bookingTime)) { e.preventDefault(); alertify.error('Please select a date and time for the booking.'); return; } orderItemsHidden.innerHTML = ''; let grandTotal = 0; cart.forEach((item, id) => { const summaryInput = document.createElement('input'); summaryInput.type = 'hidden'; summaryInput.name = 'order_items[]'; summaryInput.value = `${item.quantity}x ${item.name}`; orderItemsHidden.appendChild(summaryInput); const menuIdInput = document.createElement('input'); menuIdInput.type = 'hidden'; menuIdInput.name = 'items_menu_id[]'; menuIdInput.value = id; orderItemsHidden.appendChild(menuIdInput); const nameInput = document.createElement('input'); nameInput.type = 'hidden'; nameInput.name = 'items_name[]'; nameInput.value = item.name; orderItemsHidden.appendChild(nameInput); const priceInput = document.createElement('input'); priceInput.type = 'hidden'; priceInput.name = 'items_price[]'; priceInput.value = item.price.toFixed(2); orderItemsHidden.appendChild(priceInput); const qtyInput = document.createElement('input'); qtyInput.type = 'hidden'; qtyInput.name = 'items_qty[]'; qtyInput.value = item.quantity; orderItemsHidden.appendChild(qtyInput); grandTotal += (item.price * item.quantity); }); totalAmountInput.value = grandTotal.toFixed(2); scheduledAtInput.value = isScheduled ? `${bookingDate} ${bookingTime}:00` : ''; });
-            const createModalEl = document.getElementById('orderModal'); if (createModalEl) { createModalEl.addEventListener('hidden.bs.modal', () => { cart.clear(); renderCart(); orderForm.reset(); if (scheduleFields) scheduleFields.style.display = 'none'; }); } renderCart();
+            const createModalEl = document.getElementById('orderModal'); if (createModalEl) { createModalEl.addEventListener('hidden.bs.modal', () => { cart.clear(); renderCart(); orderForm.reset(); if (scheduleFields) scheduleFields.style.display = 'none'; }); } 
+            renderCart(); // Initial render
         }
 
         // --- TABLE ACTION EVENT DELEGATION ---
@@ -588,6 +790,59 @@
                 const target = e.target;
                 const startBtn = target.closest('.start-processing');
                 if (startBtn) { e.preventDefault(); const orderId = startBtn.dataset.orderId; if (!confirm('Start processing order #' + orderId + '?')) return; const formData = new FormData(); formData.append('order_id', orderId); formData.append('status', 'Processing'); formData.append(csrfName, csrfHash); fetch('<?= site_url('OrderController/update_status_ajax') ?>', { method: 'POST', body: formData }).then(r => r.json()).then(json => { updateCsrfFromResponse(json); if (json.success) { alertify.success('Order #' + orderId + ' is now Processing'); loadOrdersForPeriod(tablist.querySelector('.nav-link.active').dataset.period); } else { alertify.error('Failed to update status.'); } }).catch(err => alertify.error('Network error.')); }
+        const viewBtn = target.closest('.view-order');
+        if (viewBtn) {
+          e.preventDefault();
+          const orderId = viewBtn.dataset.orderId;
+          try {
+            const res = await fetch(`<?= site_url('OrderController/get_order_ajax?id=') ?>${orderId}`);
+            const json = await res.json();
+            updateCsrfFromResponse(json);
+            if (json.success && json.order) {
+              const order = json.order;
+              const details = json.details || [];
+              document.getElementById('viewOrderId').textContent = '#' + order.order_id;
+              document.getElementById('viewCustomerName').textContent = escapeHtml(order.customer_name || '');
+              document.getElementById('viewOrderTotal').textContent = '₱' + parseFloat(order.total_amount || 0).toFixed(2);
+              const statusEl = document.getElementById('viewOrderStatus');
+              let statusText = order.status || 'N/A';
+              if (statusText === 'Processing') statusEl.innerHTML = '<span class="badge text-bg-warning">Processing</span>';
+              else if (statusText === 'Done') statusEl.innerHTML = '<span class="badge text-bg-success">Done</span>';
+              else statusEl.innerHTML = '<span class="badge text-bg-secondary">New</span>';
+              const tbody = document.getElementById('viewOrderDetailsTbody');
+              tbody.innerHTML = '';
+              if (details.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">No item details available.</td></tr>';
+              } else {
+                details.forEach(d => {
+                  const price = parseFloat(d.price || d.item_price || 0);
+                  const qty = parseInt(d.quantity || d.qty || d.items_qty || 0) || 0;
+                  const name = d.item_name || d.name || d.items_name || d.product || '';
+                  const subtotal = (price * qty).toFixed(2);
+                  let imgSrc = '';
+                  if (d.image) {
+                    imgSrc = d.image.startsWith('http') ? d.image : ('<?= base_url('') ?>' + d.image.replace(/^\//, ''));
+                  } else {
+                    imgSrc = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="#e9ecef"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#6c757d" font-family="Arial, Helvetica, sans-serif" font-size="12">No Image</text></svg>');
+                  }
+                  const tr = document.createElement('tr');
+                  tr.innerHTML = `
+                    <td style="width: 80px;"><img src="${imgSrc}" alt="${escapeHtml(name)}" class="item-image"></td>
+                    <td><div class="item-details"><div class="item-name">${escapeHtml(name)}</div><div class="item-meta">₱${price.toFixed(2)} x ${qty}</div></div></td>
+                    <td class="text-end fw-bold" style="color: #593b8c;">₱${subtotal}</td>`;
+                  tbody.appendChild(tr);
+                });
+              }
+              const viewModal = new bootstrap.Modal(document.getElementById('viewOrderModal'));
+              viewModal.show();
+            } else {
+              alertify.error(json.message || 'Could not load order details');
+            }
+          } catch (err) {
+            console.error(err);
+            alertify.error('Network error loading order details');
+          }
+        }
                 const editBtn = target.closest('.btn-edit-order');
                 if (editBtn) { e.preventDefault(); const orderId = editBtn.dataset.id; const editOrderModal = new bootstrap.Modal(document.getElementById('editOrderModal')); try { const res = await fetch(`<?= site_url('OrderController/get_order_ajax?id=') ?>${orderId}`); const result = await res.json(); updateCsrfFromResponse(result); if (result.success && result.order) { const order = result.order; document.getElementById('edit_order_id').value = order.order_id; document.getElementById('edit_customer_name').value = order.customer_name; document.getElementById('edit_order_items').value = order.order_items; document.getElementById('edit_total_amount').value = order.total_amount; document.getElementById('edit_status').value = order.status; const imageDisplay = document.getElementById('current_image_display'); imageDisplay.innerHTML = order.image ? `<img src="<?= base_url('uploads/') ?>${order.image}" class="order-img" alt="Current Image">` : `<span class="text-muted small">No Image</span>`; editOrderModal.show(); } else { alertify.error(result.message || 'Could not fetch order details.'); } } catch (error) { alertify.error('An error occurred while fetching details.'); } }
             });
@@ -616,3 +871,4 @@
 
 </body>
 </html>
+
