@@ -248,7 +248,8 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Data from server
   const salesTrendData = <?php echo json_encode(['labels' => $sales_trend['labels'] ?? [], 'sales' => $sales_trend['data'] ?? []]); ?>;
-  const topItemsData = <?php echo json_encode(['labels' => $top_items['labels'] ?? [], 'sales' => $top_items['data'] ?? []]); ?>;
+  const topItemsData = <?php echo json_encode(['labels' => $top_items['labels'] ?? [], 'sales' => $top_items['data'] ?? [], 'ids' => $top_items['ids'] ?? []]); ?>;
+  const topItemsIds = topItemsData.ids || [];
 
     // --- Chart 1: Sales Trend (Bar Chart) ---
     const salesCtx = document.getElementById('salesTrendChart');

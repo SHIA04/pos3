@@ -72,18 +72,20 @@ class DashboardController extends CI_Controller
         }
         $data['sales_trend'] = ['labels' => $labels, 'data' => $series];
 
-        // Top selling items (by quantity) - top 5
-        $this->db->select('od.menu_id, od.item_name, SUM(od.quantity) as qty');
-        $this->db->from('tbl_order_details od');
-        $this->db->join('tbl_orders o', 'o.order_id = od.order_id', 'inner');
-        $this->db->where('o.status', 'Done');
-        $this->db->group_by('od.menu_id, od.item_name');
-        $this->db->order_by('qty', 'DESC');
-        $this->db->limit(5);
-        $rows = $this->db->get()->result_array();
-        $topLabels = []; $topData = [];
-        foreach ($rows as $r) { $topLabels[] = $r['item_name']; $topData[] = (int)$r['qty']; }
-        $data['top_items'] = ['labels' => $topLabels, 'data' => $topData];
+    // Top selling items (by quantity) - top 5
+    // Prefer menu_tbl.item_name when menu_id is set; fallback to order_details.item_name
+    $this->db->select('od.menu_id, COALESCE(mt.item_name, od.item_name) as item_name, SUM(od.quantity) as qty', FALSE);
+    $this->db->from('tbl_order_details od');
+    $this->db->join('tbl_orders o', 'o.order_id = od.order_id', 'inner');
+    $this->db->join('menu_tbl mt', 'mt.menu_id = od.menu_id', 'left');
+    $this->db->where('o.status', 'Done');
+    $this->db->group_by('od.menu_id, item_name');
+    $this->db->order_by('qty', 'DESC');
+    $this->db->limit(5);
+    $rows = $this->db->get()->result_array();
+    $topLabels = []; $topData = []; $topIds = [];
+    foreach ($rows as $r) { $topLabels[] = $r['item_name']; $topData[] = (int)$r['qty']; $topIds[] = isset($r['menu_id']) ? (int)$r['menu_id'] : null; }
+    $data['top_items'] = ['labels' => $topLabels, 'data' => $topData, 'ids' => $topIds];
 
         // Load view
         if (file_exists(APPPATH.'views/owner/dashboard.php')) {
