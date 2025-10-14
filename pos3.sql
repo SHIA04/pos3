@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 13, 2025 at 08:49 PM
+-- Generation Time: Oct 14, 2025 at 05:20 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -81,8 +81,8 @@ INSERT INTO `menu_tbl` (`menu_id`, `item_name`, `description`, `category`, `pric
 (17, 'scvscs', 'vdvswfcwascfsac', 'Waffles', 123467.00, 'Available', 'uploads/menu_images/e807e49f9ec0e819c6547aaf3aa9648a.jpg', '2025-10-13 14:11:49'),
 (18, 'dvewfve', 'svcswvswv', 'Beverages', 1267.00, 'Available', 'uploads/menu_images/4cb9b6d7c59c82c01a8aa876566862ec.jpg', '2025-10-13 14:15:28'),
 (19, 'vdsv sv', 'dvdvdvvd', 'Cakes', 125.00, 'Available', 'uploads/menu_images/e5abcf475ef9800ea78e71b0b6770f3c.jpg', '2025-10-13 14:19:18'),
-(20, 'master12345', 'vedvede', 'Waffles', 235.00, 'Available', 'uploads/menu_images/527300011aa2937f5264d87a83882147.jpg', '2025-10-13 15:21:33'),
-(21, 'master', 'evrgghb', 'Beverages', 23.00, 'Available', 'uploads/menu_images/7f2588d88f6895fbc8d8815962d95136.jpg', '2025-10-13 19:25:09');
+(20, 'master12345', 'vedvede', 'Beverages', 235.00, 'Available', 'uploads/menu_images/527300011aa2937f5264d87a83882147.jpg', '2025-10-13 15:21:33'),
+(21, 'master234', 'evrgghb', 'Beverages', 23.00, 'Available', 'uploads/menu_images/7f2588d88f6895fbc8d8815962d95136.jpg', '2025-10-13 19:25:09');
 
 -- --------------------------------------------------------
 
@@ -219,7 +219,11 @@ INSERT INTO `tbl_inventory_details` (`inventory_details_id`, `item_id`, `quantit
 (13, 4, 1, 'out', '2025-10-13 20:46:41'),
 (14, 2, 1, 'out', '2025-10-13 20:46:41'),
 (15, 6, 1, 'out', '2025-10-13 20:48:40'),
-(16, 4, 1, 'out', '2025-10-13 20:48:40');
+(16, 4, 1, 'out', '2025-10-13 20:48:40'),
+(17, 1, 3, 'in', '2025-10-14 04:33:18'),
+(18, 1, 3, 'out', '2025-10-14 04:34:10'),
+(19, 5, 5, 'in', '2025-10-14 04:41:34'),
+(20, 3, 4, 'in', '2025-10-14 04:44:18');
 
 -- --------------------------------------------------------
 
@@ -256,10 +260,10 @@ CREATE TABLE `tbl_menu_items` (
 INSERT INTO `tbl_menu_items` (`item_id`, `menu_id`, `item_name`, `description`, `price`, `stock_quantity`, `is_active`) VALUES
 (1, 16, 'scsc123', 'scscdv', 12135.00, 47, 1),
 (2, 17, 'scvscs', 'vdvswfcwascfsac', 123467.00, 21, 1),
-(3, 18, 'dvewfve', 'svcswvswv', 1267.00, 0, 1),
+(3, 18, 'dvewfve', 'svcswvswv', 1267.00, 4, 1),
 (4, 19, 'vdsv sv', 'dvdvdvvd', 125.00, 19, 1),
-(5, 20, 'master12345', 'vedvede', 235.00, 0, 1),
-(6, 21, 'master', 'evrgghb', 23.00, 118, 1);
+(5, 20, 'master12345', 'vedvede', 235.00, 5, 1),
+(6, 21, 'master234', 'evrgghb', 23.00, 118, 1);
 
 -- --------------------------------------------------------
 
@@ -303,7 +307,8 @@ INSERT INTO `tbl_orders` (`order_id`, `staff_id`, `customer_name`, `order_items`
 (17, 6, 'Shandy valmorida', '5x scsc', 60675.00, 'Done', NULL, '2025-10-13 18:03:20', '2025-10-13 18:36:29', '2025-10-14 00:03:20'),
 (18, 6, 'carloboy', '3x vdsv sv, 3x scsc123', 36783.00, 'Done', NULL, '2025-10-13 18:08:21', '2025-10-13 18:36:15', '2025-10-14 00:08:21'),
 (19, 6, 'acsaca', '1x master, 1x vdsv sv, 1x scvscs', 123615.00, 'New', NULL, '2025-10-13 20:46:41', '2025-10-14 02:46:41', '2025-10-14 02:46:41'),
-(20, 6, 'scsc1234', '1x master, 1x vdsv sv', 148.00, 'New', NULL, '2025-10-15 04:48:00', '2025-10-14 02:48:39', '2025-10-14 02:48:39');
+(20, 6, 'scsc1234', '1x master, 1x vdsv sv', 148.00, 'New', NULL, '2025-10-15 04:48:00', '2025-10-14 02:48:39', '2025-10-14 02:48:39'),
+(21, 2, 'carloboy', '3x scsc123', 36405.00, 'New', NULL, '2025-10-14 04:34:10', '2025-10-14 10:34:10', '2025-10-14 10:34:10');
 
 -- --------------------------------------------------------
 
@@ -357,7 +362,8 @@ INSERT INTO `tbl_order_details` (`detail_id`, `order_id`, `menu_id`, `item_name`
 (29, 19, 19, 'vdsv sv', 125.00, 1, 125.00, NULL, '2025-10-13 20:46:41'),
 (30, 19, 17, 'scvscs', 123467.00, 1, 123467.00, NULL, '2025-10-13 20:46:41'),
 (31, 20, 21, 'master', 23.00, 1, 23.00, NULL, '2025-10-13 20:48:39'),
-(32, 20, 19, 'vdsv sv', 125.00, 1, 125.00, NULL, '2025-10-13 20:48:39');
+(32, 20, 19, 'vdsv sv', 125.00, 1, 125.00, NULL, '2025-10-13 20:48:39'),
+(33, 21, 16, 'scsc123', 12135.00, 3, 36405.00, NULL, '2025-10-14 04:34:10');
 
 -- --------------------------------------------------------
 
@@ -401,7 +407,7 @@ CREATE TABLE `tbl_signup` (
 
 INSERT INTO `tbl_signup` (`signup_id`, `fullname`, `username`, `age`, `sex`, `birthday`, `role`, `phone_number`, `email`, `profile_image`, `password`, `created_at`) VALUES
 (2, 'Ryan Jay Tagolimot Reyes', 'ryanreye', 21, 'Male', '2025-10-18', 'owner', '09358554398', 'ryanjaytagolimotreyes@gmail.com', '843a76e10d259ae42c5b65d3581a381a.png', '$2y$10$ZG7Mc4D2NrWefadD3gV9a.4h0lmogA8ydr940yEBZLYLFSiVV9lgq', '2025-10-11 15:58:26'),
-(3, 'Ryan Jay Tagolimot Reyes', 'ryan', 35, 'Male', '2025-09-30', 'owner', '09358554398', 'ryanjaytagolimotreyes123@gmail.com', NULL, '$2y$10$GtHeEonNjTO18D8/M02NEurjXSSVQudW7bvOs7WsSMV9Wst5qwEra', '2025-10-11 16:05:14'),
+(3, 'Ryan Jay Tagolimot Reyes', 'ryan', 35, 'Male', '2025-09-30', 'staff', '09358554398', 'ryanjaytagolimotreyes123@gmail.com', NULL, '$2y$10$GtHeEonNjTO18D8/M02NEurjXSSVQudW7bvOs7WsSMV9Wst5qwEra', '2025-10-11 16:05:14'),
 (4, 'Ryan Jay Tagolimot Reyes', 'nayr', 35, 'Male', '2025-09-30', 'owner', '09358554398', 'ryanjay123@gmail.com', NULL, '$2y$10$6eO9y0BVgWl5XvzCUhAPwONj0zeSU2IRygOACA.gx0T8E.xJaF1wy', '2025-10-11 16:06:19'),
 (5, 'ewe', 'efwf', 23, 'Male', '2025-10-13', 'owner', '09358554398', 'ryan@gmail.com', '2ad664a59996186c4c9284df8a1749ce.jpg', '$2y$10$JDBocXPU6yv3FaXqvFKPIOovS3gWNVCsmctRHYckRvoj5ff8G0Wum', '2025-10-13 03:42:14'),
 (6, 'rwgsevwe', 'wfwf', 25, 'Male', '2025-10-13', 'staff', '09358554398', 'ryanjay12345@gmail.com', NULL, '$2y$10$Q7LbkL2yy.mm/j1lVtN3.e2pRcW18GjWn7Pa67begKP7Zmff5P5Zq', '2025-10-13 03:56:57');
@@ -577,7 +583,7 @@ ALTER TABLE `staff_tbl`
 -- AUTO_INCREMENT for table `tbl_inventory_details`
 --
 ALTER TABLE `tbl_inventory_details`
-  MODIFY `inventory_details_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `inventory_details_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `tbl_login`
@@ -595,13 +601,13 @@ ALTER TABLE `tbl_menu_items`
 -- AUTO_INCREMENT for table `tbl_orders`
 --
 ALTER TABLE `tbl_orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `tbl_order_details`
 --
 ALTER TABLE `tbl_order_details`
-  MODIFY `detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT for table `tbl_settings`
