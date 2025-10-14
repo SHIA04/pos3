@@ -143,11 +143,55 @@ class AuthController extends CI_Controller {
         // ✅ SAVE TO DATABASE
         // ============================
         if ($this->SignupModel->insert_user($data)) {
+            // Secure flow: do NOT email plaintext password. Instead create a one-time token
+            // and send a set-password link to the user.
+            $this->load->model('PasswordResetModel');
+            $this->load->library('email');
+
+            // Find the inserted user's id - assume email is unique
+            $user_row = $this->db->where('email', $data['email'])->limit(1)->get('tbl_signup')->row();
+            $email_sent = false;
+            if ($user_row) {
+                $token = $this->PasswordResetModel->create_token($user_row->signup_id, 60*60*24); // 24 hours
+                if ($token !== false) {
+                    try {
+                        // Build set-password URL
+                        $encoded = rawurlencode($token);
+                        $setUrl = site_url('auth/set_password?token=' . $encoded);
+
+                        // Initialize email using config in application/config/email.php
+                        $config = ['mailtype' => 'html', 'charset' => 'utf-8'];
+                        $this->email->initialize($config);
+                        $from_address = 'no-reply@localhost';
+                        $from_name = 'Order Flow POS';
+                        $this->email->from($from_address, $from_name);
+                        $this->email->to($data['email']);
+                        $this->email->subject('Set your Order Flow account password');
+                        $message = '<p>Hi ' . html_escape($data['fullname']) . ',</p>';
+                        $message .= '<p>Your account has been created. For security, set your password using the link below. This link expires in 24 hours and can be used only once.</p>';
+                        $message .= '<p><a href="' . $setUrl . '">Set your password</a></p>';
+                        $message .= '<p>If you did not request this, please ignore this email or contact the administrator.</p>';
+                        $this->email->message($message);
+                        $email_sent = $this->email->send();
+                        if (!$email_sent) {
+                            // Log for CI. (Temporary local debug write removed.)
+                            $dbg = $this->email->print_debugger(['headers']);
+                            log_message('error', 'Signup set-password email failed: ' . $dbg);
+                        }
+                    } catch (Exception $ex) {
+                        log_message('error', 'Exception while sending set-password email: ' . $ex->getMessage());
+                    }
+                } else {
+                    log_message('error', 'Failed to create password reset token for signup_id: ' . $user_row->signup_id);
+                }
+            } else {
+                log_message('error', 'Inserted user not found by email: ' . $data['email']);
+            }
             if ($this->input->is_ajax_request()) {
-                echo json_encode(['status' => 'success', 'role' => $data['role'], 'message' => 'Account Created']);
+                echo json_encode(['status' => 'success', 'role' => $data['role'], 'message' => 'Account Created', 'email_sent' => $email_sent]);
                 return;
             } else {
-                $this->session->set_flashdata('success', 'Registration successful!');
+                $this->session->set_flashdata('success', 'Registration successful! ' . ($email_sent ? 'A confirmation email has been sent.' : 'Unable to send confirmation email.'));
                 redirect('auth/login');
             }
         } else {
@@ -308,5 +352,59 @@ class AuthController extends CI_Controller {
         $this->output->set_header('Pragma: no-cache');
         $this->session->set_flashdata('success', 'You have been logged out successfully.');
         redirect('auth/login');
+    }
+
+    /**
+     * Show set password form when user clicks token link
+     */
+    public function set_password()
+    {
+        $token = $this->input->get('token', TRUE);
+        if (empty($token)) {
+            show_error('Invalid token', 400);
+        }
+        // We will render a simple view with hidden token field
+        $data = ['token' => $token];
+        $this->load->view('auth/set_password', $data);
+    }
+
+    /**
+     * Process POST from set_password form
+     */
+    public function process_set_password()
+    {
+        if ($this->input->method() !== 'post') {
+            show_error('Invalid request method.', 405);
+        }
+
+        $this->form_validation->set_rules('password', 'Password', 'required|min_length[8]');
+        $this->form_validation->set_rules('confirm_password', 'Confirm Password', 'required|matches[password]');
+        $this->form_validation->set_rules('token', 'Token', 'required');
+
+        if ($this->form_validation->run() === FALSE) {
+            $this->session->set_flashdata('error', validation_errors());
+            return redirect('auth/set_password?token=' . rawurlencode($this->input->post('token', TRUE)));
+        }
+
+        $token = $this->input->post('token', TRUE);
+        $this->load->model('PasswordResetModel');
+        $reset = $this->PasswordResetModel->verify_token($token);
+        if (!$reset) {
+            $this->session->set_flashdata('error', 'Invalid or expired token.');
+            return redirect('auth/login');
+        }
+
+        // Update user password
+        $new_hash = password_hash($this->input->post('password', TRUE), PASSWORD_BCRYPT);
+        $ok = $this->db->where('signup_id', $reset->signup_id)->update('tbl_signup', ['password' => $new_hash]);
+        if ($ok) {
+            // Mark token used
+            $this->PasswordResetModel->mark_used($reset->id);
+            $this->session->set_flashdata('success', 'Password set successfully. You may now login.');
+            return redirect('auth/login');
+        } else {
+            $this->session->set_flashdata('error', 'Unable to set password. Try again.');
+            return redirect('auth/set_password?token=' . rawurlencode($token));
+        }
     }
 }

@@ -298,7 +298,14 @@ class DashboardController extends CI_Controller
             'description' => $update['description']
         ];
         if (!empty($update['image'])) {
-            $inv_update['image'] = $update['image'];
+            // tbl_menu_items historically doesn't have an `image` column (see pos3.sql).
+            // Only include image in the inventory sync if the field actually exists to avoid SQL errors.
+            if ($this->db->field_exists('image', 'tbl_menu_items')) {
+                $inv_update['image'] = $update['image'];
+            } else {
+                // image belongs to `menu_tbl` (master). Do not attempt to write it into tbl_menu_items.
+                // Optionally you can log/debug here in production environments.
+            }
         }
         $this->db->where('menu_id', $id)->update('tbl_menu_items', $inv_update);
         $csrf_name = $this->security->get_csrf_token_name();
