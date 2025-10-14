@@ -356,6 +356,23 @@
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
+<!-- Small helper to safely parse fetch responses and log non-JSON (HTML error pages) -->
+<script>
+    function parseFetchResponse(res){
+        return res.text().then(function(text){
+            var ct = res.headers.get('content-type') || '';
+            if(ct.indexOf('application/json') !== -1){
+                try{ return JSON.parse(text); }catch(e){
+                    console.error('Failed to parse JSON response', e, text);
+                    return {__parse_error:true, text: text, status: res.status};
+                }
+            }
+            // not json (probably HTML error page)
+            console.warn('Non-JSON response received', { status: res.status, text: text });
+            return {__non_json:true, text: text, status: res.status};
+        });
+    }
+</script>
 <!-- Add Item Modal -->
 <div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -437,10 +454,12 @@
                     e.preventDefault();
                     var formData = new FormData(addForm);
 
+                    // Debug: log CSRF field before sending
+                    try { const csrfEl = document.getElementById('csrf_token_field'); console.log('addForm CSRF', csrfEl ? { name: csrfEl.name, value: csrfEl.value } : 'missing'); } catch(e){}
                     fetch(addForm.action, {
                         method: 'POST',
                         body: formData,
-                        credentials: 'same-origin'
+                        credentials: 'include'
                     }).then(function(res){
                         return res.json();
                             }).then(function(json){
@@ -551,9 +570,12 @@
             var editBtn = e.target.closest('.btn-edit');
             if(editBtn){
                 var id = editBtn.dataset.id;
-                fetch('<?php echo site_url('owner/menu/get'); ?>?id=' + encodeURIComponent(id), { credentials: 'same-origin' })
-                    .then(r => r.json()).then(json => {
-                        if(json.success){
+                fetch('<?php echo site_url('owner/menu/get'); ?>?id=' + encodeURIComponent(id), { credentials: 'include', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(res){
+                        return parseFetchResponse(res).then(function(json){ return { res: res, json: json }; });
+                    }).then(function(pair){
+                        var res = pair.res, json = pair.json;
+                        if(json && json.success){
                             var item = json.item;
                             document.getElementById('edit_menu_id').value = item.menu_id;
                             document.getElementById('editItemName').value = item.item_name;
@@ -568,8 +590,17 @@
                             var m = new bootstrap.Modal(document.getElementById('editItemModal'));
                             m.show();
                         } else {
-                            alert(json.message || 'Failed to fetch item');
+                            // If server returned an HTML error, show helpful info
+                            if(json && (json.__non_json || json.__parse_error)){
+                                console.error('Server error or non-JSON response for GET menu/get', json.status, json.text);
+                                alert('Server returned an error. See console for details.');
+                            } else {
+                                alert((json && json.message) ? json.message : 'Failed to fetch item');
+                            }
                         }
+                    }).catch(function(err){
+                        console.error('Fetch failed', err);
+                        alert('Failed to contact server. See console for details.');
                     });
             }
         });
@@ -577,12 +608,14 @@
         // Handle edit form submit
         var editForm = document.getElementById('editItemForm');
         if(editForm){
-            editForm.addEventListener('submit', function(e){
+                editForm.addEventListener('submit', function(e){
                 e.preventDefault();
                 var fd = new FormData(editForm);
-                fetch(editForm.action, { method: 'POST', body: fd, credentials: 'same-origin' })
-                    .then(r => r.json()).then(json => {
-                        if(json.success){
+                // Debug: log CSRF and session cookie presence
+                try { const csrfEl = document.getElementById('csrf_token_field_edit'); console.log('editForm CSRF', csrfEl ? { name: csrfEl.name, value: csrfEl.value } : 'missing'); } catch(e){}
+                fetch(editForm.action, { method: 'POST', body: fd, credentials: 'include', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(res){ return parseFetchResponse(res); }).then(function(json){
+                        if(json && json.success){
                             // update DOM card
                             var item = json.item;
                             var card = findCard(item.menu_id);
@@ -603,9 +636,14 @@
                             bootstrap.Modal.getInstance(mEl).hide();
                             if(typeof alertify !== 'undefined') alertify.success('Item updated');
                         } else {
-                            if(typeof alertify !== 'undefined') alertify.error(json.message || 'Update failed');
+                            if(json && (json.__non_json || json.__parse_error)){
+                                console.error('Server error or non-JSON response for POST menu/update', json.status, json.text);
+                                alert('Server returned an error (see console).');
+                            } else {
+                                if(typeof alertify !== 'undefined') alertify.error(json.message || 'Update failed');
+                            }
                         }
-                    });
+                    }).catch(function(err){ console.error('Request failed', err); if(typeof alertify !== 'undefined') alertify.error('Request failed'); });
             });
         }
 
@@ -616,23 +654,27 @@
 
             var id = delBtn.dataset.id;
 
-            function performDelete(){
+                function performDelete(){
                 var fd = new FormData();
                 // include csrf
                 var csrfField = document.getElementById('csrf_token_field');
                 if(csrfField){ fd.append(csrfField.name, csrfField.value); }
                 fd.append('menu_id', id);
-
-                fetch('<?php echo site_url('owner/menu/delete'); ?>', { method: 'POST', body: fd, credentials: 'same-origin' })
-                    .then(r => r.json()).then(json => {
-                        if(json.success){
+                fetch('<?php echo site_url('owner/menu/delete'); ?>', { method: 'POST', body: fd, credentials: 'include', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(res){ return parseFetchResponse(res); }).then(function(json){
+                        if(json && json.success){
                             var card = findCard(id);
                             if(card) card.remove();
                             // update csrf
                             if(json.csrf_token_name && json.csrf_hash){ var f = document.getElementById('csrf_token_field'); if(f){ f.name = json.csrf_token_name; f.value = json.csrf_hash; } }
                             if(typeof alertify !== 'undefined') alertify.success('Item deleted');
                         } else {
-                            if(typeof alertify !== 'undefined') alertify.error(json.message || 'Delete failed');
+                            if(json && (json.__non_json || json.__parse_error)){
+                                console.error('Server error or non-JSON response for POST menu/delete', json.status, json.text);
+                                alert('Server returned an error (see console).');
+                            } else {
+                                if(typeof alertify !== 'undefined') alertify.error(json.message || 'Delete failed');
+                            }
                         }
                     }).catch(function(err){
                         console.error('Delete request failed', err);
