@@ -12,9 +12,14 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
-  <!-- AlertifyJS -->
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/bootstrap.min.css"/>
+  
+
+  <!-- ✅ AlertifyJS CSS (must come first for styling) -->
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/default.min.css"/>
+
+<!-- ✅ AlertifyJS script (can be in head or before your custom JS) -->
+<script src="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
 
   <style>
     /* --- NEW & IMPROVED DESIGN --- */
@@ -159,7 +164,7 @@
       cursor: pointer;
     }
   </style>
-</head>
+</head> 
 <body>
 
 <div class="container-fluid p-0">
@@ -307,9 +312,12 @@
   </div>
 </div>
 
-<!-- AlertifyJS (Script remains unchanged) -->
-<script src="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
-<!-- All validation and AJAX logic remains unchanged -->
+
+<!-- AlertifyJS CSS (required for popups to appear) -->
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/default.min.css"/>
+
 <script>
 alertify.set('notifier','position', 'top-right');
 
@@ -320,17 +328,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
 
-    // --- START: New UI Feature - Password Toggle ---
+    // Password toggle (unchanged)
     if (togglePassword) {
         togglePassword.addEventListener('click', function() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
-            // Toggle the icon
             this.querySelector('i').classList.toggle('bi-eye');
             this.querySelector('i').classList.toggle('bi-eye-slash');
         });
     }
-    // --- END: New UI Feature ---
 
     const csrfFieldName = '<?= $this->security->get_csrf_token_name(); ?>';
     const csrfCookieName = '<?= $this->config->item('csrf_cookie_name'); ?>' || 'ci_csrf_token';
@@ -371,9 +377,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // ✅ Enhanced field-by-field validation (1 popup per field)
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-        let errors = [];
+
         const fullname = document.getElementById('fullname').value.trim();
         const username = document.getElementById('username').value.trim();
         const age = parseInt(document.getElementById('age').value.trim());
@@ -385,28 +392,70 @@ document.addEventListener('DOMContentLoaded', function() {
         const password = document.getElementById('password').value;
         const confirm_password = document.getElementById('confirm_password').value;
 
-        if(!fullname) errors.push("Full Name is required");
-        else if(!/^[a-zA-Z\s.-]+$/.test(fullname)) errors.push("Full Name must contain only valid characters");
-        if(!username) errors.push("Username is required");
-        else if(!/^[a-zA-Z]{4,8}$/.test(username)) errors.push("Username must be 4-8 letters only");
-        if(isNaN(age) || age <= 0 || age > 120) errors.push("Age must be between 1-120");
-        if(!birthday) errors.push("Birthday is required");
-        if(!sex) errors.push("Sex is required");
-        if(!role) errors.push("Role is required");
-        if(!phone) errors.push("Phone Number is required");
-        else if(!/^\d{11}$/.test(phone)) errors.push("Phone Number must be exactly 11 digits");
-        if(!email) errors.push("Email is required");
-        else if(!/^\S+@\S+\.\S+$/.test(email)) errors.push("Email is invalid");
-        if(!password) errors.push("Password is required");
-        else if(!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password))
-            errors.push("Password must be at least 8 characters with letters and numbers");
-        if(password !== confirm_password) errors.push("Passwords do not match");
+        let errors = [];
 
-        if(errors.length > 0) {
-            alertify.error(errors.join('<br>'), 5);
+        // If all fields are empty
+        if (!fullname && !username && !age && !sex && !birthday && !role && !phone && !email && !password && !confirm_password) {
+            alertify.error("All fields are required!");
             return;
         }
 
+        // Fullname
+        if (!fullname) errors.push("Full Name is required");
+        else if (fullname.length < 8) errors.push("Full Name must be 8 or more characters");
+
+        // Username
+        if (!username) errors.push("Username is required");
+        else if (!/^[A-Za-z]{5,8}$/.test(username)) errors.push("Username must be 5–8 letters only");
+
+        // Age and Birthday
+        if (!age) errors.push("Age is required");
+        if (!birthday) errors.push("Birthday is required");
+        else {
+            const birthDate = new Date(birthday);
+            const today = new Date();
+            let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                calculatedAge--;
+            }
+            if (age !== calculatedAge) errors.push("Age does not match the birthday");
+        }
+
+        // Sex
+        if (!sex) errors.push("Sex is required");
+
+        // Role
+        if (!role) errors.push("Role is required");
+
+        // Phone number
+        if (!phone) errors.push("Phone Number is required");
+        else if (!/^[0-9]{11}$/.test(phone)) errors.push("Phone Number must be exactly 11 digits");
+
+        // Email
+        if (!email) errors.push("Email is required");
+        else if (!/^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$/.test(email)) errors.push("Please enter a valid email");
+
+        // Password
+        if (!password) errors.push("Password is required");
+        else if (!/^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$/.test(password))
+            errors.push("Password must be at least 8 characters with letters and numbers");
+
+        // Confirm password
+        if (!confirm_password) errors.push("Confirm Password is required");
+        else if (password !== confirm_password) errors.push("Passwords do not match");
+
+        // ✅ One popup per field
+        if (errors.length > 0) {
+            errors.forEach((msg, index) => {
+                setTimeout(() => {
+                    alertify.error(msg);
+                }, index * 600); // small delay between popups
+            });
+            return;
+        }
+
+        // Proceed to form submission if no errors
         const formData = new FormData(form);
         const currentToken = csrfInput ? csrfInput.value : '';
         fetch(API_URL, {
@@ -458,5 +507,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
 </body>
 </html>
