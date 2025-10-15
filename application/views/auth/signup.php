@@ -12,14 +12,9 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
-  
-
-  <!-- ✅ AlertifyJS CSS (must come first for styling) -->
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/default.min.css"/>
-
-<!-- ✅ AlertifyJS script (can be in head or before your custom JS) -->
-<script src="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
+  <!-- AlertifyJS -->
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/bootstrap.min.css"/>
 
   <style>
     /* --- NEW & IMPROVED DESIGN --- */
@@ -164,7 +159,7 @@
       cursor: pointer;
     }
   </style>
-</head> 
+</head>
 <body>
 
 <div class="container-fluid p-0">
@@ -203,14 +198,14 @@
               <label class="form-label">Full Name</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-person"></i></span>
-                <input type="text" name="fullname" id="fullname" class="form-control" placeholder="e.g. John Doe" required>
+                <input type="text" name="fullname" id="fullname" class="form-control" placeholder="e.g. John Doe">
               </div>
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label">Username</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-at"></i></span>
-                <input type="text" name="username" id="username" class="form-control" placeholder="4-8 letters" required>
+                <input type="text" name="username" id="username" class="form-control" placeholder="4-8 letters">
               </div>
             </div>
           </div>
@@ -220,14 +215,14 @@
               <label class="form-label">Age</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-hash"></i></span>
-                <input type="number" name="age" id="age" class="form-control" placeholder="Your age" required>
+                <input type="number" name="age" id="age" class="form-control" placeholder="Your age">
               </div>
             </div>
             <div class="col-md-4 mb-3">
               <label class="form-label">Sex</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-gender-ambiguous"></i></span>
-                <select name="sex" id="sex" class="form-select" required>
+                <select name="sex" id="sex" class="form-select">
                   <option value="">Select...</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
@@ -238,7 +233,7 @@
               <label class="form-label">Birthday</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
-                <input type="date" name="birthday" id="birthday" class="form-control" required>
+                <input type="date" name="birthday" id="birthday" class="form-control">
               </div>
             </div>
           </div>
@@ -248,7 +243,7 @@
               <label class="form-label">Role</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-briefcase"></i></span>
-                <select name="role" id="role" class="form-select" required>
+                <select name="role" id="role" class="form-select">
                   <option value="">Select...</option>
                   <option value="owner">Owner</option>
                   <option value="staff">Staff</option>
@@ -259,7 +254,7 @@
               <label class="form-label">Phone Number</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-phone"></i></span>
-                <input type="text" name="phone_number" id="phone_number" class="form-control" placeholder="11 digits" maxlength="11" required>
+                <input type="text" name="phone_number" id="phone_number" class="form-control" placeholder="11 digits" maxlength="11">
               </div>
             </div>
           </div>
@@ -268,7 +263,7 @@
             <label class="form-label">Email</label>
             <div class="input-group">
               <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-              <input type="email" name="email" id="email" class="form-control" placeholder="you@example.com" required>
+              <input type="email" name="email" id="email" class="form-control" placeholder="you@example.com">
             </div>
           </div>
 
@@ -277,7 +272,7 @@
               <label class="form-label">Password</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                <input type="password" name="password" id="password" class="form-control" placeholder="Min. 8 characters" required>
+                <input type="password" name="password" id="password" class="form-control" placeholder="Min. 8 characters">
                 <span class="input-group-text password-toggle-icon" id="togglePassword"><i class="bi bi-eye-slash"></i></span>
               </div>
             </div>
@@ -285,7 +280,7 @@
               <label class="form-label">Confirm Password</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                <input type="password" name="confirm_password" id="confirm_password" class="form-control" placeholder="Repeat password" required>
+                <input type="password" name="confirm_password" id="confirm_password" class="form-control" placeholder="Repeat password">
               </div>
             </div>
           </div>
@@ -312,12 +307,10 @@
   </div>
 </div>
 
+<!-- AlertifyJS -->
+<script src="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
 
-<!-- AlertifyJS CSS (required for popups to appear) -->
-
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/default.min.css"/>
-
+<!-- Validation and AJAX Logic -->
 <script>
 alertify.set('notifier','position', 'top-right');
 
@@ -328,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
 
-    // Password toggle (unchanged)
+    // Password Toggle Feature
     if (togglePassword) {
         togglePassword.addEventListener('click', function() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -377,13 +370,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ✅ Enhanced field-by-field validation (1 popup per field)
     form.addEventListener('submit', function(e) {
         e.preventDefault();
+        let isValid = true; // --- MODIFICATION: Use a validity flag
 
         const fullname = document.getElementById('fullname').value.trim();
         const username = document.getElementById('username').value.trim();
-        const age = parseInt(document.getElementById('age').value.trim());
+        const age = document.getElementById('age').value.trim();
         const sex = document.getElementById('sex').value;
         const birthday = document.getElementById('birthday').value;
         const role = document.getElementById('role').value;
@@ -392,70 +385,84 @@ document.addEventListener('DOMContentLoaded', function() {
         const password = document.getElementById('password').value;
         const confirm_password = document.getElementById('confirm_password').value;
 
-        let errors = [];
+        // --- MODIFICATION: Individual validation checks with separate alerts ---
 
-        // If all fields are empty
-        if (!fullname && !username && !age && !sex && !birthday && !role && !phone && !email && !password && !confirm_password) {
-            alertify.error("All fields are required!");
-            return;
+        if(!fullname) {
+            alertify.error("Full Name is required");
+            isValid = false;
+        } else if(!/^[a-zA-Z\s.-]+$/.test(fullname)) {
+            alertify.error("Full Name contains invalid characters");
+            isValid = false;
+        }
+        
+        if(!username) {
+            alertify.error("Username is required");
+            isValid = false;
+        } else if(!/^[a-zA-Z]{4,8}$/.test(username)) {
+            alertify.error("Username must be 4-8 letters only");
+            isValid = false;
+        }
+        
+        if(!age) {
+            alertify.error("Age is required");
+            isValid = false;
+        } else if(isNaN(parseInt(age)) || parseInt(age) <= 0 || parseInt(age) > 120) {
+            alertify.error("Age must be between 1-120");
+            isValid = false;
         }
 
-        // Fullname
-        if (!fullname) errors.push("Full Name is required");
-        else if (fullname.length < 8) errors.push("Full Name must be 8 or more characters");
-
-        // Username
-        if (!username) errors.push("Username is required");
-        else if (!/^[A-Za-z]{5,8}$/.test(username)) errors.push("Username must be 5–8 letters only");
-
-        // Age and Birthday
-        if (!age) errors.push("Age is required");
-        if (!birthday) errors.push("Birthday is required");
-        else {
-            const birthDate = new Date(birthday);
-            const today = new Date();
-            let calculatedAge = today.getFullYear() - birthDate.getFullYear();
-            const monthDiff = today.getMonth() - birthDate.getMonth();
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                calculatedAge--;
-            }
-            if (age !== calculatedAge) errors.push("Age does not match the birthday");
+        if(!sex) {
+            alertify.error("Sex is required");
+            isValid = false;
         }
 
-        // Sex
-        if (!sex) errors.push("Sex is required");
-
-        // Role
-        if (!role) errors.push("Role is required");
-
-        // Phone number
-        if (!phone) errors.push("Phone Number is required");
-        else if (!/^[0-9]{11}$/.test(phone)) errors.push("Phone Number must be exactly 11 digits");
-
-        // Email
-        if (!email) errors.push("Email is required");
-        else if (!/^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$/.test(email)) errors.push("Please enter a valid email");
-
-        // Password
-        if (!password) errors.push("Password is required");
-        else if (!/^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$/.test(password))
-            errors.push("Password must be at least 8 characters with letters and numbers");
-
-        // Confirm password
-        if (!confirm_password) errors.push("Confirm Password is required");
-        else if (password !== confirm_password) errors.push("Passwords do not match");
-
-        // ✅ One popup per field
-        if (errors.length > 0) {
-            errors.forEach((msg, index) => {
-                setTimeout(() => {
-                    alertify.error(msg);
-                }, index * 600); // small delay between popups
-            });
-            return;
+        if(!birthday) {
+            alertify.error("Birthday is required");
+            isValid = false;
+        }
+        
+        if(!role) {
+            alertify.error("Role is required");
+            isValid = false;
+        }
+        
+        if(!phone) {
+            alertify.error("Phone Number is required");
+            isValid = false;
+        } else if(!/^\d{11}$/.test(phone)) {
+            alertify.error("Phone Number must be 11 digits");
+            isValid = false;
         }
 
-        // Proceed to form submission if no errors
+        if(!email) {
+            alertify.error("Email is required");
+            isValid = false;
+        } else if(!/^\S+@\S+\.\S+$/.test(email)) {
+            alertify.error("Email is invalid");
+            isValid = false;
+        }
+        
+        if(!password) {
+            alertify.error("Password is required");
+            isValid = false;
+        } else if(!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password)) {
+            alertify.error("Password must be 8+ characters with letters & numbers");
+            isValid = false;
+        }
+
+        if(!confirm_password) {
+            alertify.error("Confirm Password is required");
+            isValid = false;
+        } else if(password && password !== confirm_password) {
+            alertify.error("Passwords do not match");
+            isValid = false;
+        }
+
+        // --- MODIFICATION: Stop submission if any validation failed
+        if (!isValid) {
+            return; 
+        }
+
         const formData = new FormData(form);
         const currentToken = csrfInput ? csrfInput.value : '';
         fetch(API_URL, {
@@ -496,7 +503,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 alertify.success(data.message || 'Registration successful. Redirecting...');
                 setTimeout(() => {
                     window.location.href = LOGIN_URL;
-                }, 2000);
+                }, 2000); 
             } else {
                 alertify.message('Request completed.');
             }
@@ -507,6 +514,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
 </body>
 </html>

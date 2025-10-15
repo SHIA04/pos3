@@ -178,7 +178,7 @@
             <label class="form-label">Username</label>
             <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-person"></i></span>
-                <input type="text" name="username" id="username" class="form-control" placeholder="Enter your username" required>
+                <input type="text" name="username" id="username" class="form-control" placeholder="Enter your username">
             </div>
           </div>
 
@@ -186,7 +186,7 @@
             <label class="form-label">Password</label>
             <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
+                <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password">
                 <span class="input-group-text password-toggle-icon" id="togglePassword"><i class="bi bi-eye-slash"></i></span>
             </div>
           </div>
@@ -204,9 +204,9 @@
   </div>
 </div>
 
-<!-- AlertifyJS (Script remains unchanged) -->
+<!-- AlertifyJS -->
 <script src="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
-<!-- All validation and AJAX logic remains unchanged -->
+<!-- Validation and AJAX Logic -->
 <script>
 alertify.set('notifier','position', 'top-right');
 
@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
 
-    // --- START: New UI Feature - Password Toggle ---
+    // Password Toggle Feature
     if (togglePassword) {
         togglePassword.addEventListener('click', function() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -224,7 +224,6 @@ document.addEventListener('DOMContentLoaded', function() {
             this.querySelector('i').classList.toggle('bi-eye-slash');
         });
     }
-    // --- END: New UI Feature ---
 
     const PROCESS_URL_ABS = "<?= site_url('auth/process_login'); ?>";
     const PROCESS_URL = (new URL(PROCESS_URL_ABS)).pathname;
@@ -234,15 +233,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     form.addEventListener('submit', function(e){
         e.preventDefault();
-        let errors = [];
+        
+        let isValid = true; // --- MODIFICATION: Use a validity flag
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
 
-        if(!username) errors.push("Username is required");
-        if(!password) errors.push("Password is required");
+        // --- MODIFICATION: Individual validation checks with separate alerts ---
+        if(!username) {
+            alertify.error("Username is required");
+            isValid = false;
+        }
 
-        if(errors.length > 0){
-            errors.forEach(msg => alertify.error(msg));
+        if(!password) {
+            alertify.error("Password is required");
+            isValid = false;
+        }
+
+        // --- MODIFICATION: Stop submission if any validation failed
+        if (!isValid) {
             return;
         }
 
