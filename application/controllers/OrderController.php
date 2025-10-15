@@ -356,10 +356,42 @@ class OrderController extends CI_Controller {
         ];
 
         $ok = $this->OrderModel->update_order($order_id, $data);
+        // Persist order and its details
         header('Content-Type: application/json');
         if ($ok) {
+            // Save/replace order details if arrays are provided
+            $menu_ids = $this->input->post('items_menu_id');
+            $names    = $this->input->post('items_name');
+            $prices   = $this->input->post('items_price');
+            $qtys     = $this->input->post('items_qty');
+
+            $detail_rows = [];
+            if (is_array($names) && is_array($prices) && is_array($qtys)) {
+                $count = min(count($names), count($prices), count($qtys));
+                for ($i = 0; $i < $count; $i++) {
+                    $menu_id  = is_array($menu_ids) && isset($menu_ids[$i]) && $menu_ids[$i] !== '' ? (int)$menu_ids[$i] : null;
+                    $itemName = trim($names[$i]);
+                    $price    = (float)$prices[$i];
+                    $qty      = (int)$qtys[$i];
+                    if ($qty <= 0 || $price < 0 || $itemName === '') continue;
+                    $detail_rows[] = [
+                        'order_id'  => $order_id,
+                        'menu_id'   => $menu_id,
+                        'item_name' => $itemName,
+                        'price'     => $price,
+                        'quantity'  => $qty,
+                        'subtotal'  => $price * $qty,
+                        'created_at'=> date('Y-m-d H:i:s')
+                    ];
+                }
+            }
+
+            // Replace existing order details with the new set
+            $this->OrderModel->update_order_details_batch($order_id, $detail_rows);
+
             $order_updated = $this->OrderModel->get_order($order_id);
-            echo json_encode(['success' => true, 'order' => $order_updated, 'csrf_token_name' => $this->security->get_csrf_token_name(), 'csrf_hash' => $this->security->get_csrf_hash()]);
+            $details = $this->OrderModel->get_order_details($order_id);
+            echo json_encode(['success' => true, 'order' => $order_updated, 'details' => $details, 'csrf_token_name' => $this->security->get_csrf_token_name(), 'csrf_hash' => $this->security->get_csrf_hash()]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update order', 'csrf_token_name' => $this->security->get_csrf_token_name(), 'csrf_hash' => $this->security->get_csrf_hash()]);
         }

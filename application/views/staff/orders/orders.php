@@ -178,9 +178,23 @@
     .panel-header {
       padding: 1rem 1.25rem;
       border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
     }
     .panel-header h6 {
       margin: 0;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .panel-header .panel-subtle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
       font-weight: 600;
     }
     .menu-list-container {
@@ -193,25 +207,44 @@
       margin-bottom: 0.5rem;
       border-color: var(--border-color);
     }
-    #order-summary-list {
+    /* Order summary lists: apply consistent spacing, rounded items and clear empty state */
+    #order-summary-list,
+    #edit-order-summary-list {
       list-style: none;
-      padding: 0;
+      padding: 0.75rem;
       flex-grow: 1;
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 160px;
     }
-    #order-summary-list li {
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--border-color);
+    #order-summary-list li,
+    #edit-order-summary-list li {
+      padding: 0.85rem 1rem;
+      border-radius: 0.6rem;
+      background-color: var(--light-bg);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
     }
-    #order-summary-list li:last-child {
-      border-bottom: none;
-    }
+    #order-summary-list li:last-child,
+    #edit-order-summary-list li:last-child { }
+    #order-summary-list .empty,
+    #edit-order-summary-list .empty { text-align: center; width: 100%; padding: 2rem 0; color: var(--text-muted); }
     .summary-item-details {
       flex-grow: 1;
       margin-right: 1rem;
+      min-width: 0;
     }
     .summary-item-details .name {
-      font-weight: 600;
+      font-weight: 700;
+      font-size: 0.98rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .summary-item-details .price {
       font-size: 0.9rem;
@@ -238,10 +271,11 @@
     }
     .order-summary-footer {
       background-color: var(--light-bg);
-      padding: 1.25rem;
+      padding: 1rem 1.25rem;
       border-top: 1px solid var(--border-color);
       border-bottom-left-radius: 0.75rem;
       border-bottom-right-radius: 0.75rem;
+      align-items: center;
     }
     #grand-total {
       font-size: 1.6rem;
@@ -425,30 +459,67 @@
 <!-- ==  END: REDESIGNED CREATE ORDER MODAL  == -->
 <!-- ======================================= -->
 
-<!-- Edit Order Modal -->
+<!-- Edit Order Modal (redesigned to match Create Order layout) -->
 <div class="modal fade" id="editOrderModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Edit Order</h5>
+        <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Edit Order</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-4">
         <form id="editOrderForm" method="post" enctype="multipart/form-data">
           <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>" id="csrf_token_field_staff_edit">
           <input type="hidden" name="order_id" id="edit_order_id">
-          <div class="row g-3">
-            <div class="col-md-6"><label for="edit_customer_name" class="form-label">Customer Name</label><input type="text" class="form-control" id="edit_customer_name" name="customer_name" required></div>
-            <div class="col-md-6"><label for="edit_status" class="form-label">Status</label><select id="edit_status" name="status" class="form-select"><option value="New">New</option><option value="Processing">Processing</option><option value="Done">Done</option></select></div>
-            <div class="col-12"><label for="edit_order_items" class="form-label">Items (comma-separated)</label><textarea class="form-control" id="edit_order_items" name="order_items" rows="3" required></textarea></div>
-            <div class="col-md-6"><label for="edit_total_amount" class="form-label">Total Amount (₱)</label><input type="number" step="0.01" class="form-control" id="edit_total_amount" name="total_amount" required></div>
-             <div class="col-md-6"><label for="edit_image" class="form-label">Change Image (Optional)</label><input class="form-control" type="file" name="image" id="edit_image"><div id="current_image_display" class="mt-2"></div></div>
+
+          <div class="customer-details-panel mb-3">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Customer Name</label>
+                <input type="text" name="customer_name" id="edit_customer_name" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Status</label>
+                <select id="edit_status" name="status" class="form-select"><option value="New">New</option><option value="Processing">Processing</option><option value="Done">Done</option></select>
+              </div>
+              <div class="col-12 d-flex align-items-center">
+                <div id="current_image_display" class="me-3"></div>
+                <div class="flex-grow-1">
+                  <label class="form-label">Change Image (Optional)</label>
+                  <input class="form-control" type="file" name="image" id="edit_image">
+                </div>
+              </div>
+            </div>
           </div>
+
+          <div class="row g-4">
+            <div class="col-lg-5">
+              <div class="menu-panel">
+                <div class="panel-header"><h6><i class="bi bi-journal-text me-2"></i>Available Menu Items</h6></div>
+                <div id="edit-menu-list-container" class="list-group list-group-flush menu-list-container" style="min-height:240px; max-height:420px; overflow-y:auto;"></div>
+              </div>
+            </div>
+            <div class="col-lg-7">
+              <div class="summary-panel">
+                <div class="panel-header"><h6><i class="bi bi-basket me-2"></i>Current Order</h6></div>
+                <ul id="edit-order-summary-list" style="list-style:none; padding:0; margin:0; flex-grow:1; max-height:420px; overflow-y:auto;"></ul>
+                <div class="order-summary-footer d-flex justify-content-between align-items-center">
+                  <span class="fs-5 fw-bold text-dark">Grand Total:</span>
+                  <span id="edit-grand-total" class="fw-bold" style="color: var(--primary-color);">₱0.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <input type="hidden" id="edit_order_items_hidden" name="order_items">
+          <input type="hidden" name="total_amount" id="edit_total_amount" value="">
+          <div id="editOrderItemsHidden"></div>
+
         </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="submit" form="editOrderForm" class="btn btn-primary">Save Changes</button>
+        <button type="submit" form="editOrderForm" class="btn btn-primary px-4">Save Changes</button>
       </div>
     </div>
   </div>
@@ -571,6 +642,17 @@
     <?php if($this->session->flashdata('error')): ?>
         alertify.error("<?= $this->session->flashdata('error') ?>");
     <?php endif; ?>
+
+  // Shared edit cart state (hoisted so other handlers can access it)
+  let cartEdit = new Map();
+  let _synthEditId = -1;
+
+  // Edit modal DOM references (hoisted so all handlers can access)
+  const editMenuListContainer = document.getElementById('menu-list-container') ? document.getElementById('menu-list-container').cloneNode(true) : null;
+  const editOrderSummaryList = document.getElementById('edit-order-summary-list');
+  const editGrandTotalDisplay = document.getElementById('edit-grand-total');
+  const editOrderItemsHidden = document.getElementById('editOrderItemsHidden');
+  const editOrderItemsHiddenInput = document.getElementById('edit_order_items_hidden');
 
     // --- TAB & AJAX LOGIC FOR LOADING ORDERS ---
     const tablist = document.getElementById('ordersTablist');
@@ -716,6 +798,75 @@
       orderForm.addEventListener('submit', function(e) { const customerName = document.getElementById('customerName').value; if (!customerName.trim() || cart.size === 0) { e.preventDefault(); alertify.error('Please enter a customer name and add items.'); return; } const isScheduled = scheduleCheck && scheduleCheck.checked; const bookingDate = document.getElementById('bookingDate').value; const bookingTime = document.getElementById('bookingTime').value; if (isScheduled && (!bookingDate || !bookingTime)) { e.preventDefault(); alertify.error('Please select a date and time for the booking.'); return; } orderItemsHidden.innerHTML = ''; let grandTotal = 0; cart.forEach((item, id) => { const summaryInput = document.createElement('input'); summaryInput.type = 'hidden'; summaryInput.name = 'order_items[]'; summaryInput.value = `${item.quantity}x ${item.name}`; orderItemsHidden.appendChild(summaryInput); const menuIdInput = document.createElement('input'); menuIdInput.type = 'hidden'; menuIdInput.name = 'items_menu_id[]'; menuIdInput.value = id; orderItemsHidden.appendChild(menuIdInput); const nameInput = document.createElement('input'); nameInput.type = 'hidden'; nameInput.name = 'items_name[]'; nameInput.value = item.name; orderItemsHidden.appendChild(nameInput); const priceInput = document.createElement('input'); priceInput.type = 'hidden'; priceInput.name = 'items_price[]'; priceInput.value = item.price.toFixed(2); orderItemsHidden.appendChild(priceInput); const qtyInput = document.createElement('input'); qtyInput.type = 'hidden'; qtyInput.name = 'items_qty[]'; qtyInput.value = item.quantity; orderItemsHidden.appendChild(qtyInput); grandTotal += (item.price * item.quantity); }); totalAmountInput.value = grandTotal.toFixed(2); scheduledAtInput.value = isScheduled ? `${bookingDate} ${bookingTime}:00` : ''; });
       const createModalEl = document.getElementById('orderModal'); if (createModalEl) { createModalEl.addEventListener('hidden.bs.modal', () => { cart.clear(); renderCart(); orderForm.reset(); if (scheduleFields) scheduleFields.style.display = 'none'; }); }
       renderCart(); // Initial render
+  // --- EDIT MODAL CART (shared UI logic for edit modal) ---
+    // We'll render the edit menu by cloning the main menu list into the edit modal later.
+
+      function renderCartEdit() {
+        if (!editOrderSummaryList) return;
+        editOrderSummaryList.innerHTML = '';
+        let grandTotal = 0;
+        if (cartEdit.size === 0) {
+          editOrderSummaryList.innerHTML = '<li class="text-center text-muted p-4">No items in the order.</li>';
+          if (editGrandTotalDisplay) editGrandTotalDisplay.textContent = '₱0.00';
+          return;
+        }
+        cartEdit.forEach((item, id) => {
+          const subtotal = (item.price || 0) * (item.quantity || 0);
+          grandTotal += subtotal;
+          const li = document.createElement('li');
+          li.className = 'd-flex align-items-center';
+          li.innerHTML = `
+            <div class="summary-item-details">
+              <div class="name">${escapeHtml(item.name)}</div>
+              <div class="price">₱${(item.price || 0).toFixed(2)}</div>
+            </div>
+            <div class="quantity-controls me-3">
+              <button type="button" data-id="${id}" data-action="decrease">-</button>
+              <span class="quantity-display">${item.quantity}</span>
+              <button type="button" data-id="${id}" data-action="increase">+</button>
+            </div>
+            <div class="fw-bold me-2" style="min-width: 70px; text-align: right;">₱${subtotal.toFixed(2)}</div>
+            <button type="button" class="btn btn-sm btn-outline-danger border-0" data-id="${id}" data-action="remove"><i class="bi bi-trash"></i></button>`;
+          editOrderSummaryList.appendChild(li);
+        });
+        if (editGrandTotalDisplay) editGrandTotalDisplay.textContent = '₱' + grandTotal.toFixed(2);
+      }
+
+      // Attach click handlers for edit menu and quantity controls (delegated)
+      const editMenuContainerEl = document.getElementById('edit-menu-list-container');
+      if (editMenuContainerEl) {
+        editMenuContainerEl.addEventListener('click', (e) => {
+          e.preventDefault();
+          const el = e.target.closest('.menu-list-item');
+          if (!el) return;
+          const id = parseInt(el.dataset.id);
+          const name = el.dataset.name;
+          const price = parseFloat(el.dataset.price || '0');
+          const stock = parseInt(el.dataset.stock || '0');
+          if (stock <= 0) { alertify.error('This item is out of stock.'); return; }
+          if (cartEdit.has(id)) {
+            const cur = cartEdit.get(id);
+            if (cur.quantity + 1 > stock) { alertify.error('Cannot add more. Stock limit reached.'); return; }
+            cur.quantity++;
+          } else {
+            cartEdit.set(id, { name, price, quantity: 1, stock });
+          }
+          renderCartEdit();
+        });
+      }
+      if (editOrderSummaryList) {
+        editOrderSummaryList.addEventListener('click', (e) => {
+          const t = e.target.closest('button');
+          if (!t || !t.dataset.id) return;
+          const id = parseInt(t.dataset.id);
+          const action = t.dataset.action;
+          if (!cartEdit.has(id)) return;
+          if (action === 'increase') { const cur = cartEdit.get(id); cur.quantity++; }
+          else if (action === 'decrease') { const cur = cartEdit.get(id); if (cur.quantity > 1) cur.quantity--; else cartEdit.delete(id); }
+          else if (action === 'remove') cartEdit.delete(id);
+          renderCartEdit();
+        });
+      }
     }
     
     // --- TABLE ACTION EVENT DELEGATION (START PROCESSING, EDIT, VIEW) ---
@@ -724,7 +875,84 @@
       const startBtn = target.closest('.start-processing');
       if (startBtn) { e.preventDefault(); const orderId = startBtn.dataset.orderId; if (!confirm('Start processing order #' + orderId + '?')) return; const formData = new FormData(); formData.append('order_id', orderId); formData.append('status', 'Processing'); formData.append(csrfName, csrfHash); fetch('<?= site_url('OrderController/update_status_ajax') ?>', { method: 'POST', body: formData }).then(r => r.json()).then(json => { updateCsrfFromResponse(json); if (json.success) { alertify.success('Order #' + orderId + ' is now Processing'); loadOrdersForPeriod(tablist.querySelector('.nav-link.active').dataset.period); } else { alertify.error('Failed to update status.'); } }).catch(err => alertify.error('Network error.')); }
       const editBtn = target.closest('.btn-edit-order');
-      if (editBtn) { e.preventDefault(); const orderId = editBtn.dataset.id; const editOrderModal = new bootstrap.Modal(document.getElementById('editOrderModal')); try { const res = await fetch(`<?= site_url('OrderController/get_order_ajax?id=') ?>${orderId}`); const result = await res.json(); updateCsrfFromResponse(result); if (result.success && result.order) { const order = result.order; document.getElementById('edit_order_id').value = order.order_id; document.getElementById('edit_customer_name').value = order.customer_name; document.getElementById('edit_order_items').value = order.order_items; document.getElementById('edit_total_amount').value = order.total_amount; document.getElementById('edit_status').value = order.status; const imageDisplay = document.getElementById('current_image_display'); imageDisplay.innerHTML = order.image ? `<img src="<?= base_url('uploads/order_images/') ?>${order.image}" class="order-img" alt="Current Image">` : `<span class="text-muted small">No Image</span>`; editOrderModal.show(); } else { alertify.error(result.message || 'Could not fetch order details.'); } } catch (error) { alertify.error('An error occurred while fetching details.'); } }
+      if (editBtn) {
+        e.preventDefault();
+        const orderId = editBtn.dataset.id;
+        const editOrderModalEl = document.getElementById('editOrderModal');
+        const editOrderModal = new bootstrap.Modal(editOrderModalEl);
+        // Prepare UI: clone menu into edit modal if available
+        const editMenuContainer = document.getElementById('edit-menu-list-container');
+        if (editMenuContainer) {
+          editMenuContainer.innerHTML = '';
+          const mainMenu = document.getElementById('menu-list-container');
+          if (mainMenu) { editMenuContainer.appendChild(mainMenu.cloneNode(true)); }
+        }
+
+        // Fallback: prefill immediately from table row (fast perceived response)
+        const row = editBtn.closest('tr');
+        if (row) {
+          const cols = row.querySelectorAll('td');
+          const itemsCell = cols[2]?.textContent || '';
+          const totalCell = cols[3]?.textContent || '';
+          const customerCell = cols[1]?.textContent || '';
+          // quick parse customer name
+          const customerName = (customerCell || '').replace(/\s+/g,' ').trim();
+          document.getElementById('edit_customer_name').value = customerName;
+          // parse total like '₱123.45'
+          const totalMatch = (totalCell || '').replace(/[^0-9\.\-]/g,'');
+          document.getElementById('edit_total_amount').value = totalMatch || '';
+          // parse items fallback: e.g., '2x Burger, 1x Fries'
+          const parsed = [];
+          itemsCell.split(',').forEach(part => {
+            const m = part.trim().match(/^(\d+)x?\s*(.*)$/i);
+            if (m) parsed.push({ quantity: parseInt(m[1]), name: m[2].trim() });
+            else if (part.trim()) parsed.push({ quantity: 1, name: part.trim() });
+          });
+          // populate cartEdit from parsed fallback
+          cartEdit.clear();
+          parsed.forEach(p => {
+            // attempt to find menu id from cloned menu
+            let foundId = null; let foundPrice = 0; const menuEl = document.querySelector(`#edit-menu-list-container .menu-list-item[data-name]`);
+            const candidates = Array.from(document.querySelectorAll('#edit-menu-list-container .menu-list-item'));
+            for (const c of candidates) {
+              if (c.dataset.name && c.dataset.name.toLowerCase().trim() === p.name.toLowerCase().trim()) { foundId = parseInt(c.dataset.id); foundPrice = parseFloat(c.dataset.price || '0'); break; }
+            }
+            if (foundId) cartEdit.set(foundId, { name: p.name, price: foundPrice, quantity: p.quantity, stock: parseInt(document.querySelector(`#edit-menu-list-container .menu-list-item[data-id="${foundId}"]`)?.dataset?.stock||'0') });
+            else { // synthetic id
+              const sid = _synthEditId--; cartEdit.set(sid, { name: p.name, price: 0.00, quantity: p.quantity, stock: 0 }); }
+          });
+          renderCartEdit();
+        }
+
+        // Now refine by fetching full order details from server
+        try {
+          const res = await fetch(`<?= site_url('OrderController/get_order_ajax?id=') ?>${orderId}`, { credentials: 'include' });
+          const result = await res.json();
+          updateCsrfFromResponse(result);
+          if (result && result.success && result.order) {
+            const order = result.order;
+            document.getElementById('edit_order_id').value = order.order_id;
+            document.getElementById('edit_customer_name').value = order.customer_name || '';
+            document.getElementById('edit_total_amount').value = order.total_amount || '';
+            document.getElementById('edit_status').value = order.status || '';
+            const imageDisplay = document.getElementById('current_image_display');
+            if (imageDisplay) imageDisplay.innerHTML = order.image ? `<img src="<?= base_url('uploads/order_images/') ?>${order.image}" class="order-img" alt="Current Image">` : `<span class="text-muted small">No Image</span>`;
+
+            // If server returned structured details, use them to populate cartEdit
+            const details = result.details || [];
+            if (details.length > 0) {
+              cartEdit.clear();
+              details.forEach(d => {
+                const mid = d.menu_id ? parseInt(d.menu_id) : (d.menu_id === null ? null : null);
+                const key = mid || (_synthEditId--);
+                cartEdit.set(key, { name: d.item_name || d.name || d.items_name, price: parseFloat(d.price || d.item_price || 0), quantity: parseInt(d.quantity || d.qty || d.items_qty || 0) || 0, stock: 9999 });
+              });
+              renderCartEdit();
+            }
+            editOrderModal.show();
+          } else { alertify.error(result.message || 'Could not fetch order details.'); }
+        } catch (error) { console.error(error); alertify.error('An error occurred while fetching details.'); }
+      }
       const viewBtn = target.closest('.view-order');
       if (viewBtn) {
         e.preventDefault();
@@ -774,9 +1002,28 @@
     if (editOrderForm) {
       editOrderForm.addEventListener('submit', async function(e) {
         e.preventDefault();
-        const formData = new FormData(editOrderForm);
+        // serialize cartEdit into hidden inputs expected by server
+        editOrderItemsHidden.innerHTML = '';
+        const form = editOrderForm;
+        // build human-readable summary
+        const summaryPieces = [];
+        cartEdit.forEach((item, id) => {
+          // add structured inputs
+          const menuIdInput = document.createElement('input'); menuIdInput.type = 'hidden'; menuIdInput.name = 'items_menu_id[]'; menuIdInput.value = (id > 0) ? id : '';
+          const nameInput = document.createElement('input'); nameInput.type = 'hidden'; nameInput.name = 'items_name[]'; nameInput.value = item.name;
+          const priceInput = document.createElement('input'); priceInput.type = 'hidden'; priceInput.name = 'items_price[]'; priceInput.value = (item.price || 0).toFixed(2);
+          const qtyInput = document.createElement('input'); qtyInput.type = 'hidden'; qtyInput.name = 'items_qty[]'; qtyInput.value = item.quantity;
+          editOrderItemsHidden.appendChild(menuIdInput); editOrderItemsHidden.appendChild(nameInput); editOrderItemsHidden.appendChild(priceInput); editOrderItemsHidden.appendChild(qtyInput);
+          summaryPieces.push(`${item.quantity}x ${item.name}`);
+        });
+        // set the human-readable order_items hidden input
+        if (editOrderItemsHiddenInput) editOrderItemsHiddenInput.value = summaryPieces.join(', ');
+        // append CSRF token
+        const fd = new FormData(editOrderForm);
+        // ensure CSRF included
+        fd.append(csrfName, csrfHash);
         try {
-          const res = await fetch('<?= site_url('OrderController/update_order_ajax') ?>', { method: 'POST', body: formData });
+          const res = await fetch('<?= site_url('OrderController/update_order_ajax') ?>', { method: 'POST', body: fd, credentials: 'include' });
           const result = await res.json();
           updateCsrfFromResponse(result);
           if (result.success) {
@@ -784,7 +1031,7 @@
             bootstrap.Modal.getInstance(document.getElementById('editOrderModal')).hide();
             loadOrdersForPeriod(tablist.querySelector('.nav-link.active').dataset.period);
           } else { alertify.error(result.message || 'Failed to update order.'); }
-        } catch (error) { alertify.error('An error occurred while updating the order.'); }
+        } catch (error) { console.error(error); alertify.error('An error occurred while updating the order.'); }
       });
     }
   });
