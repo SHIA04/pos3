@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 14, 2025 at 05:20 AM
+-- Generation Time: Oct 15, 2025 at 05:44 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,40 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `pos3`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `admin_tbl`
---
-
-CREATE TABLE `admin_tbl` (
-  `admin_id` int(11) NOT NULL,
-  `fullname` varchar(100) NOT NULL,
-  `username` varchar(50) NOT NULL,
-  `age` int(11) NOT NULL,
-  `sex` enum('Female','Male') NOT NULL,
-  `birthday` date NOT NULL,
-  `phone_number` int(11) NOT NULL,
-  `email_address` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `confirm_password` varchar(50) NOT NULL,
-  `role` enum('Admin') DEFAULT 'Admin',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `inventory_tbl`
---
-
-CREATE TABLE `inventory_tbl` (
-  `inventory_id` int(11) NOT NULL,
-  `menu_id` int(11) NOT NULL,
-  `quantity` int(11) NOT NULL DEFAULT 0,
-  `updated_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -81,8 +47,8 @@ INSERT INTO `menu_tbl` (`menu_id`, `item_name`, `description`, `category`, `pric
 (17, 'scvscs', 'vdvswfcwascfsac', 'Waffles', 123467.00, 'Available', 'uploads/menu_images/e807e49f9ec0e819c6547aaf3aa9648a.jpg', '2025-10-13 14:11:49'),
 (18, 'dvewfve', 'svcswvswv', 'Beverages', 1267.00, 'Available', 'uploads/menu_images/4cb9b6d7c59c82c01a8aa876566862ec.jpg', '2025-10-13 14:15:28'),
 (19, 'vdsv sv', 'dvdvdvvd', 'Cakes', 125.00, 'Available', 'uploads/menu_images/e5abcf475ef9800ea78e71b0b6770f3c.jpg', '2025-10-13 14:19:18'),
-(20, 'master12345', 'vedvede', 'Beverages', 235.00, 'Available', 'uploads/menu_images/527300011aa2937f5264d87a83882147.jpg', '2025-10-13 15:21:33'),
-(21, 'master234', 'evrgghb', 'Beverages', 23.00, 'Available', 'uploads/menu_images/7f2588d88f6895fbc8d8815962d95136.jpg', '2025-10-13 19:25:09');
+(20, 'master12345', 'vedvede', 'Beverages', 235.00, 'Available', 'uploads/menu_images/4b08ce7e03fa55f9f1f41b1a4ff0d9a1.jpg', '2025-10-13 15:21:33'),
+(21, 'master2345', 'evrgghb', 'Beverages', 234.00, 'Available', 'uploads/menu_images/db110efc571cdac57ce7417b96c5651c.jpg', '2025-10-13 19:25:09');
 
 -- --------------------------------------------------------
 
@@ -104,23 +70,29 @@ INSERT INTO `migrations` (`version`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `owner_tbl`
+-- Table structure for table `password_resets`
 --
 
-CREATE TABLE `owner_tbl` (
-  `owner_id` int(11) NOT NULL,
-  `fullname` varchar(250) NOT NULL,
-  `username` varchar(50) NOT NULL,
-  `age` int(11) NOT NULL,
-  `sex` enum('Female','Male') NOT NULL,
-  `birthday` date NOT NULL,
-  `phone_number` int(11) NOT NULL,
-  `email_address` varchar(50) NOT NULL,
-  `password` varchar(50) NOT NULL,
-  `confirm_password` varchar(50) NOT NULL,
-  `role` enum('Owner','Admin','Staff') NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE `password_resets` (
+  `id` int(11) UNSIGNED NOT NULL,
+  `signup_id` int(11) NOT NULL,
+  `token_hash` varchar(255) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `password_resets`
+--
+
+INSERT INTO `password_resets` (`id`, `signup_id`, `token_hash`, `expires_at`, `used`, `created_at`) VALUES
+(1, 9, '$2y$10$k8g3c0Lbiy1AlS.avo6DUOaJmlMuV0offYbp8/G1MZJOXCPpejT1C', '2025-10-15 09:33:10', 0, '2025-10-14 09:33:10'),
+(2, 10, '$2y$10$8tj4Zeq8SWkw3SlB2sgGG.vq.u4fVjIPNjXS.Mf1hvYVSch4xJway', '2025-10-15 09:35:46', 0, '2025-10-14 09:35:46'),
+(3, 11, '$2y$10$s2ea2FMv8fmq6TL1mMK7AO33Ltss2EEuFHYiynhePdSWLZLS.cW3i', '2025-10-15 09:36:48', 0, '2025-10-14 09:36:48'),
+(4, 12, '$2y$10$lrq0DyT07l0xN9X4RRFOSOKBHrBG1vlXWRdxvosnC3cF3abuHA8NG', '2025-10-16 02:36:39', 0, '2025-10-15 02:36:39'),
+(5, 13, '$2y$10$ah3xSE/dyfVdZRRyVAOSm.48lSpdKCkPHlWo.MB4lqUoYhevDvqPO', '2025-10-16 03:50:49', 0, '2025-10-15 03:50:49'),
+(6, 14, '$2y$10$ACkri0Boq1L.ck6qbttjtOpV97o8viGTRiC0xhFVRhFKhk7/zeM.e', '2025-10-16 03:54:32', 0, '2025-10-15 03:54:32');
 
 -- --------------------------------------------------------
 
@@ -142,48 +114,6 @@ INSERT INTO `roles_tbl` (`role_id`, `role_name`, `description`) VALUES
 (1, 'Owner', 'System Owner with full privileges'),
 (2, 'Admin', 'Can manage staff and view reports'),
 (3, 'Staff', 'Can perform assigned operational tasks');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `staff_tbl`
---
-
-CREATE TABLE `staff_tbl` (
-  `staff_id` int(11) NOT NULL,
-  `fullname` varchar(100) NOT NULL,
-  `username` varchar(50) NOT NULL,
-  `age` int(11) NOT NULL,
-  `sex` enum('Female','Male') NOT NULL,
-  `birhday` date NOT NULL,
-  `phone_number` int(11) NOT NULL,
-  `email_address` varchar(50) NOT NULL,
-  `password` varchar(50) NOT NULL,
-  `confirm_password` varchar(50) NOT NULL,
-  `role` enum('Staff') DEFAULT 'Staff',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tbl_admin_profile`
---
-
-CREATE TABLE `tbl_admin_profile` (
-  `admin_id` int(11) NOT NULL,
-  `fullname` varchar(250) NOT NULL,
-  `username` varchar(50) NOT NULL,
-  `age` int(11) NOT NULL,
-  `sex` enum('Male','Female') NOT NULL,
-  `birthday` date NOT NULL,
-  `role` enum('Admin','Staff') NOT NULL,
-  `phone_number` int(11) NOT NULL,
-  `email` varchar(150) NOT NULL,
-  `password` varchar(100) NOT NULL,
-  `confirm_password` varchar(100) NOT NULL,
-  `date_signed` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -223,19 +153,13 @@ INSERT INTO `tbl_inventory_details` (`inventory_details_id`, `item_id`, `quantit
 (17, 1, 3, 'in', '2025-10-14 04:33:18'),
 (18, 1, 3, 'out', '2025-10-14 04:34:10'),
 (19, 5, 5, 'in', '2025-10-14 04:41:34'),
-(20, 3, 4, 'in', '2025-10-14 04:44:18');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tbl_login`
---
-
-CREATE TABLE `tbl_login` (
-  `admin_id` int(11) NOT NULL,
-  `username` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+(20, 3, 4, 'in', '2025-10-14 04:44:18'),
+(21, 6, 3, 'out', '2025-10-14 07:17:32'),
+(22, 5, 2, 'out', '2025-10-14 07:17:32'),
+(23, 4, 2, 'out', '2025-10-14 07:17:32'),
+(24, 2, 2, 'out', '2025-10-14 07:17:32'),
+(25, 1, 2, 'out', '2025-10-14 07:21:38'),
+(26, 1, 5, 'in', '2025-10-14 07:22:20');
 
 -- --------------------------------------------------------
 
@@ -258,12 +182,12 @@ CREATE TABLE `tbl_menu_items` (
 --
 
 INSERT INTO `tbl_menu_items` (`item_id`, `menu_id`, `item_name`, `description`, `price`, `stock_quantity`, `is_active`) VALUES
-(1, 16, 'scsc123', 'scscdv', 12135.00, 47, 1),
-(2, 17, 'scvscs', 'vdvswfcwascfsac', 123467.00, 21, 1),
+(1, 16, 'scsc123', 'scscdv', 12135.00, 50, 1),
+(2, 17, 'scvscs', 'vdvswfcwascfsac', 123467.00, 19, 1),
 (3, 18, 'dvewfve', 'svcswvswv', 1267.00, 4, 1),
-(4, 19, 'vdsv sv', 'dvdvdvvd', 125.00, 19, 1),
-(5, 20, 'master12345', 'vedvede', 235.00, 5, 1),
-(6, 21, 'master234', 'evrgghb', 23.00, 118, 1);
+(4, 19, 'vdsv sv', 'dvdvdvvd', 125.00, 17, 1),
+(5, 20, 'master12345', 'vedvede', 235.00, 3, 1),
+(6, 21, 'master2345', 'evrgghb', 234.00, 115, 1);
 
 -- --------------------------------------------------------
 
@@ -307,8 +231,9 @@ INSERT INTO `tbl_orders` (`order_id`, `staff_id`, `customer_name`, `order_items`
 (17, 6, 'Shandy valmorida', '5x scsc', 60675.00, 'Done', NULL, '2025-10-13 18:03:20', '2025-10-13 18:36:29', '2025-10-14 00:03:20'),
 (18, 6, 'carloboy', '3x vdsv sv, 3x scsc123', 36783.00, 'Done', NULL, '2025-10-13 18:08:21', '2025-10-13 18:36:15', '2025-10-14 00:08:21'),
 (19, 6, 'acsaca', '1x master, 1x vdsv sv, 1x scvscs', 123615.00, 'New', NULL, '2025-10-13 20:46:41', '2025-10-14 02:46:41', '2025-10-14 02:46:41'),
-(20, 6, 'scsc1234', '1x master, 1x vdsv sv', 148.00, 'New', NULL, '2025-10-15 04:48:00', '2025-10-14 02:48:39', '2025-10-14 02:48:39'),
-(21, 2, 'carloboy', '3x scsc123', 36405.00, 'New', NULL, '2025-10-14 04:34:10', '2025-10-14 10:34:10', '2025-10-14 10:34:10');
+(20, 6, 'scsc1234', '1x master, 1x vdsv sv, 1x master2345', 382.00, 'New', NULL, '2025-10-15 04:48:00', '2025-10-15 03:33:04', '2025-10-14 02:48:39'),
+(21, 2, 'carloboy', '3x scsc123, 2x dvewfve, 1x scvscs', 162406.00, 'New', NULL, '2025-10-14 04:34:10', '2025-10-15 05:43:40', '2025-10-14 10:34:10'),
+(22, 7, 'Asia', '3x master2345, 2x master12345, 2x vdsv sv, 2x scvscs', 248356.00, 'Done', NULL, '2025-10-14 07:17:32', '2025-10-14 07:19:47', '2025-10-14 13:17:32');
 
 -- --------------------------------------------------------
 
@@ -361,24 +286,16 @@ INSERT INTO `tbl_order_details` (`detail_id`, `order_id`, `menu_id`, `item_name`
 (28, 19, 21, 'master', 23.00, 1, 23.00, NULL, '2025-10-13 20:46:41'),
 (29, 19, 19, 'vdsv sv', 125.00, 1, 125.00, NULL, '2025-10-13 20:46:41'),
 (30, 19, 17, 'scvscs', 123467.00, 1, 123467.00, NULL, '2025-10-13 20:46:41'),
-(31, 20, 21, 'master', 23.00, 1, 23.00, NULL, '2025-10-13 20:48:39'),
-(32, 20, 19, 'vdsv sv', 125.00, 1, 125.00, NULL, '2025-10-13 20:48:39'),
-(33, 21, 16, 'scsc123', 12135.00, 3, 36405.00, NULL, '2025-10-14 04:34:10');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tbl_settings`
---
-
-CREATE TABLE `tbl_settings` (
-  `id` int(11) NOT NULL,
-  `store_name` varchar(100) DEFAULT NULL,
-  `store_address` varchar(255) DEFAULT NULL,
-  `contact_number` varchar(20) DEFAULT NULL,
-  `vat_rate` decimal(5,2) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+(34, 22, 21, 'master2345', 234.00, 3, 702.00, NULL, '2025-10-14 07:17:32'),
+(35, 22, 20, 'master12345', 235.00, 2, 470.00, NULL, '2025-10-14 07:17:32'),
+(36, 22, 19, 'vdsv sv', 125.00, 2, 250.00, NULL, '2025-10-14 07:17:32'),
+(37, 22, 17, 'scvscs', 123467.00, 2, 246934.00, NULL, '2025-10-14 07:17:32'),
+(41, 20, NULL, 'master', 23.00, 1, 23.00, NULL, '2025-10-15 03:33:04'),
+(42, 20, 19, 'vdsv sv', 125.00, 1, 125.00, NULL, '2025-10-15 03:33:04'),
+(43, 20, 21, 'master2345', 234.00, 1, 234.00, NULL, '2025-10-15 03:33:04'),
+(53, 21, 16, 'scsc123', 12135.00, 3, 36405.00, NULL, '2025-10-15 05:43:40'),
+(54, 21, 18, 'dvewfve', 1267.00, 2, 2534.00, NULL, '2025-10-15 05:43:40'),
+(55, 21, 17, 'scvscs', 123467.00, 1, 123467.00, NULL, '2025-10-15 05:43:40');
 
 -- --------------------------------------------------------
 
@@ -410,47 +327,15 @@ INSERT INTO `tbl_signup` (`signup_id`, `fullname`, `username`, `age`, `sex`, `bi
 (3, 'Ryan Jay Tagolimot Reyes', 'ryan', 35, 'Male', '2025-09-30', 'staff', '09358554398', 'ryanjaytagolimotreyes123@gmail.com', NULL, '$2y$10$GtHeEonNjTO18D8/M02NEurjXSSVQudW7bvOs7WsSMV9Wst5qwEra', '2025-10-11 16:05:14'),
 (4, 'Ryan Jay Tagolimot Reyes', 'nayr', 35, 'Male', '2025-09-30', 'owner', '09358554398', 'ryanjay123@gmail.com', NULL, '$2y$10$6eO9y0BVgWl5XvzCUhAPwONj0zeSU2IRygOACA.gx0T8E.xJaF1wy', '2025-10-11 16:06:19'),
 (5, 'ewe', 'efwf', 23, 'Male', '2025-10-13', 'owner', '09358554398', 'ryan@gmail.com', '2ad664a59996186c4c9284df8a1749ce.jpg', '$2y$10$JDBocXPU6yv3FaXqvFKPIOovS3gWNVCsmctRHYckRvoj5ff8G0Wum', '2025-10-13 03:42:14'),
-(6, 'rwgsevwe', 'wfwf', 25, 'Male', '2025-10-13', 'staff', '09358554398', 'ryanjay12345@gmail.com', NULL, '$2y$10$Q7LbkL2yy.mm/j1lVtN3.e2pRcW18GjWn7Pa67begKP7Zmff5P5Zq', '2025-10-13 03:56:57');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tbl_staff_profile`
---
-
-CREATE TABLE `tbl_staff_profile` (
-  `staff_id` int(11) NOT NULL,
-  `fullname` varchar(250) NOT NULL,
-  `username` varchar(50) NOT NULL,
-  `age` int(11) NOT NULL,
-  `sex` enum('Male','Female') NOT NULL,
-  `birthday` date NOT NULL,
-  `role` enum('Admin','Staff') NOT NULL,
-  `phone_number` int(11) NOT NULL,
-  `email` varchar(150) NOT NULL,
-  `password` varchar(100) NOT NULL,
-  `confirm_password` varchar(100) NOT NULL,
-  `date_signed` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+(6, 'rwgsevwe', 'wfwf', 25, 'Male', '2025-10-13', 'staff', '09358554398', 'ryanjay12345@gmail.com', NULL, '$2y$10$Q7LbkL2yy.mm/j1lVtN3.e2pRcW18GjWn7Pa67begKP7Zmff5P5Zq', '2025-10-13 03:56:57'),
+(7, 'Asia Shandara Valmorida', 'asia', 22, 'Female', '2025-10-14', 'owner', '09358554398', 'asia@gmail.com', NULL, '$2y$10$xCTgo3PqO4MNf1npg3zUUOj4R9fMPskPCq6Bt8g5gbLkbrj0uBPkS', '2025-10-14 07:15:31'),
+(12, 'test name', 'test123', 25, 'Male', '2025-10-15', 'staff', '09358554398', 'test@gmail.com', '4e1680ba08cc10fcd07846b48bff3f85.jpg', '$2y$10$xnuZ1C4mdlZ5HCFVAzawseVxFu77efIu6OSUnZeg846ZZEG94jyQS', '2025-10-15 02:36:39'),
+(13, 'Ruby', 'ruby123', 24, 'Female', '2025-10-15', 'staff', '09358554398', 'ruby@gmail.com', '1bba73286e1b891b5891041fbf279b34.jpg', '$2y$10$.IMJNDAIBAqbmwHgRqjaG.bP3if9vwT.9RevNYZgeGpyMRLQCtqIy', '2025-10-15 03:50:49'),
+(14, 'Ashlee Nicole Mabayo', 'ashlee123', 24, 'Female', '2025-10-15', 'staff', '09358554398', 'ashlee@gmail.com', 'cfde1af6650a5c399e06a18a26993b84.jpg', '$2y$10$BlOMJ8bMKSRI0zCp4Qki5.mfnqWDA.7SRqR6RVJC5YArFh.U6Vo4u', '2025-10-15 03:54:32');
 
 --
 -- Indexes for dumped tables
 --
-
---
--- Indexes for table `admin_tbl`
---
-ALTER TABLE `admin_tbl`
-  ADD PRIMARY KEY (`admin_id`),
-  ADD UNIQUE KEY `email` (`username`),
-  ADD UNIQUE KEY `username` (`email_address`);
-
---
--- Indexes for table `inventory_tbl`
---
-ALTER TABLE `inventory_tbl`
-  ADD PRIMARY KEY (`inventory_id`),
-  ADD KEY `menu_id` (`menu_id`);
 
 --
 -- Indexes for table `menu_tbl`
@@ -459,10 +344,10 @@ ALTER TABLE `menu_tbl`
   ADD PRIMARY KEY (`menu_id`);
 
 --
--- Indexes for table `owner_tbl`
+-- Indexes for table `password_resets`
 --
-ALTER TABLE `owner_tbl`
-  ADD PRIMARY KEY (`owner_id`);
+ALTER TABLE `password_resets`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `roles_tbl`
@@ -472,31 +357,11 @@ ALTER TABLE `roles_tbl`
   ADD UNIQUE KEY `role_name` (`role_name`);
 
 --
--- Indexes for table `staff_tbl`
---
-ALTER TABLE `staff_tbl`
-  ADD PRIMARY KEY (`staff_id`),
-  ADD UNIQUE KEY `email` (`email_address`);
-
---
--- Indexes for table `tbl_admin_profile`
---
-ALTER TABLE `tbl_admin_profile`
-  ADD UNIQUE KEY `fullname` (`fullname`),
-  ADD UNIQUE KEY `username` (`username`);
-
---
 -- Indexes for table `tbl_inventory_details`
 --
 ALTER TABLE `tbl_inventory_details`
   ADD PRIMARY KEY (`inventory_details_id`),
   ADD KEY `idx_item_id` (`item_id`);
-
---
--- Indexes for table `tbl_login`
---
-ALTER TABLE `tbl_login`
-  ADD PRIMARY KEY (`admin_id`);
 
 --
 -- Indexes for table `tbl_menu_items`
@@ -521,12 +386,6 @@ ALTER TABLE `tbl_order_details`
   ADD KEY `menu_id` (`menu_id`);
 
 --
--- Indexes for table `tbl_settings`
---
-ALTER TABLE `tbl_settings`
-  ADD PRIMARY KEY (`id`);
-
---
 -- Indexes for table `tbl_signup`
 --
 ALTER TABLE `tbl_signup`
@@ -534,26 +393,8 @@ ALTER TABLE `tbl_signup`
   ADD UNIQUE KEY `email` (`email`);
 
 --
--- Indexes for table `tbl_staff_profile`
---
-ALTER TABLE `tbl_staff_profile`
-  ADD PRIMARY KEY (`staff_id`);
-
---
 -- AUTO_INCREMENT for dumped tables
 --
-
---
--- AUTO_INCREMENT for table `admin_tbl`
---
-ALTER TABLE `admin_tbl`
-  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `inventory_tbl`
---
-ALTER TABLE `inventory_tbl`
-  MODIFY `inventory_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `menu_tbl`
@@ -562,10 +403,10 @@ ALTER TABLE `menu_tbl`
   MODIFY `menu_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
--- AUTO_INCREMENT for table `owner_tbl`
+-- AUTO_INCREMENT for table `password_resets`
 --
-ALTER TABLE `owner_tbl`
-  MODIFY `owner_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `password_resets`
+  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `roles_tbl`
@@ -574,22 +415,10 @@ ALTER TABLE `roles_tbl`
   MODIFY `role_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT for table `staff_tbl`
---
-ALTER TABLE `staff_tbl`
-  MODIFY `staff_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `tbl_inventory_details`
 --
 ALTER TABLE `tbl_inventory_details`
-  MODIFY `inventory_details_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
-
---
--- AUTO_INCREMENT for table `tbl_login`
---
-ALTER TABLE `tbl_login`
-  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `inventory_details_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `tbl_menu_items`
@@ -601,41 +430,23 @@ ALTER TABLE `tbl_menu_items`
 -- AUTO_INCREMENT for table `tbl_orders`
 --
 ALTER TABLE `tbl_orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `tbl_order_details`
 --
 ALTER TABLE `tbl_order_details`
-  MODIFY `detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
-
---
--- AUTO_INCREMENT for table `tbl_settings`
---
-ALTER TABLE `tbl_settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
 
 --
 -- AUTO_INCREMENT for table `tbl_signup`
 --
 ALTER TABLE `tbl_signup`
-  MODIFY `signup_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
-
---
--- AUTO_INCREMENT for table `tbl_staff_profile`
---
-ALTER TABLE `tbl_staff_profile`
-  MODIFY `staff_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `signup_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- Constraints for dumped tables
 --
-
---
--- Constraints for table `inventory_tbl`
---
-ALTER TABLE `inventory_tbl`
-  ADD CONSTRAINT `inventory_tbl_ibfk_1` FOREIGN KEY (`menu_id`) REFERENCES `menu_tbl` (`menu_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `tbl_menu_items`

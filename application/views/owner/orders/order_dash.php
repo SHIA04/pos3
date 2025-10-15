@@ -567,8 +567,48 @@
               </select>
             </div>
             <div class="col-12">
-              <label for="edit_order_items" class="form-label">Items (comma-separated)</label>
-              <textarea class="form-control" id="edit_order_items" name="order_items" rows="3" required></textarea>
+              <div class="row g-4">
+                <div class="col-lg-5">
+                  <div class="menu-panel">
+                    <div class="panel-header"><h6><i class="bi bi-journal-text me-2"></i>Available Menu Items</h6></div>
+                    <div id="edit-menu-list-container" class="list-group list-group-flush">
+                      <?php if(isset($menu_items) && !empty($menu_items)): ?>
+                        <?php foreach($menu_items as $m): ?>
+                          <?php $stock = isset($m['stock_quantity']) ? (int)$m['stock_quantity'] : 0; ?>
+                          <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center menu-list-item"
+                             data-id="<?= (int)$m['menu_id'] ?>"
+                             data-name="<?= htmlspecialchars($m['item_name']) ?>"
+                             data-price="<?= number_format((float)$m['price'],2,'.','') ?>"
+                             data-stock="<?= $stock ?>">
+                            <div>
+                              <?= htmlspecialchars($m['item_name']) ?>
+                              <span class="badge rounded-pill ms-2 small <?= $stock > 0 ? 'text-bg-success' : 'text-bg-secondary' ?>"><?= $stock > 0 ? 'In Stock' : 'Out of Stock' ?></span>
+                            </div>
+                            <span class="fw-bold" style="color: rebeccapurple;">₱<?= number_format((float)$m['price'],2) ?></span>
+                          </a>
+                        <?php endforeach; ?>
+                      <?php else: ?>
+                        <div class="text-muted small p-3 text-center">No menu items available.</div>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-7">
+                  <div class="summary-panel">
+                    <div class="panel-header"><h6><i class="bi bi-basket me-2"></i>Order Items</h6></div>
+                    <ul id="edit-order-summary-list">
+                      <!-- Items populated by JS -->
+                    </ul>
+                    <div class="order-summary-footer d-flex justify-content-between align-items-center">
+                      <span class="fs-5 fw-bold" style="color:#343a40;">Grand Total:</span>
+                      <span id="edit-grand-total">₱0.00</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Back-compat hidden summary and container for structured hidden inputs populated on submit -->
+              <input type="hidden" id="edit_order_items_hidden" name="order_items" value="">
+              <div id="editOrderItemsHidden"></div>
             </div>
             <div class="col-md-6">
               <label for="edit_total_amount" class="form-label">Total Amount (₱)</label>
@@ -599,6 +639,30 @@
     const csrfName = '<?php echo $this->security->get_csrf_token_name(); ?>';
     let csrfHash = '<?php echo $this->security->get_csrf_hash(); ?>';
     function updateCsrfFromResponse(json) { if (json && json.csrf_hash) { csrfHash = json.csrf_hash; document.querySelectorAll('input[name="' + csrfName + '"]').forEach(e => e.value = csrfHash); } }
+
+    // Robust fetch helper that always sends credentials and validates JSON responses
+    async function safeFetchJson(url, options = {}) {
+      const opts = Object.assign({}, options, { credentials: 'include' });
+      const res = await fetch(url, opts);
+      const ct = res.headers.get('content-type') || '';
+      if (!res.ok) {
+        const text = await res.text();
+        const err = new Error('HTTP ' + res.status + ': ' + text);
+        err.status = res.status;
+        err.body = text;
+        throw err;
+      }
+      if (ct.indexOf('application/json') === -1) {
+        const text = await res.text();
+        const err = new Error('Expected JSON but got: ' + text);
+        err.body = text;
+        throw err;
+      }
+      const data = await res.json();
+      // update CSRF if present
+      try { updateCsrfFromResponse(data); } catch (e) { /* noop */ }
+      return data;
+    }
 
   // Simple HTML escaper for dynamic content
   function escapeHtml(str) {
@@ -641,6 +705,17 @@
 
     // --- MAIN SCRIPT EXECUTION ---
     document.addEventListener('DOMContentLoaded', function() {
+
+  // Shared edit cart state must be in a scope accessible to both
+  // the edit modal UI logic and the edit form submit handler.
+  // Define here (DOMContentLoaded scope) so other nested blocks
+  // can read/write it without redeclaring with let/const.
+  // Also attach to window to avoid ReferenceErrors if handlers run
+  // in contexts where the local binding isn't visible (safer global).
+  let cartEdit = window.cartEdit || new Map();
+  window.cartEdit = cartEdit;
+  let _synthEditId = (typeof window._synthEditId !== 'undefined') ? window._synthEditId : -1;
+  window._synthEditId = _synthEditId;
         
         // --- NOTIFICATIONS ---
         alertify.set('notifier','position', 'top-right');
@@ -782,6 +857,116 @@
             orderForm.addEventListener('submit', function(e) { const customerName = document.getElementById('customerName').value; if (!customerName.trim() || cart.size === 0) { e.preventDefault(); alertify.error('Please enter a customer name and add items.'); return; } const isScheduled = scheduleCheck && scheduleCheck.checked; const bookingDate = document.getElementById('bookingDate').value; const bookingTime = document.getElementById('bookingTime').value; if (isScheduled && (!bookingDate || !bookingTime)) { e.preventDefault(); alertify.error('Please select a date and time for the booking.'); return; } orderItemsHidden.innerHTML = ''; let grandTotal = 0; cart.forEach((item, id) => { const summaryInput = document.createElement('input'); summaryInput.type = 'hidden'; summaryInput.name = 'order_items[]'; summaryInput.value = `${item.quantity}x ${item.name}`; orderItemsHidden.appendChild(summaryInput); const menuIdInput = document.createElement('input'); menuIdInput.type = 'hidden'; menuIdInput.name = 'items_menu_id[]'; menuIdInput.value = id; orderItemsHidden.appendChild(menuIdInput); const nameInput = document.createElement('input'); nameInput.type = 'hidden'; nameInput.name = 'items_name[]'; nameInput.value = item.name; orderItemsHidden.appendChild(nameInput); const priceInput = document.createElement('input'); priceInput.type = 'hidden'; priceInput.name = 'items_price[]'; priceInput.value = item.price.toFixed(2); orderItemsHidden.appendChild(priceInput); const qtyInput = document.createElement('input'); qtyInput.type = 'hidden'; qtyInput.name = 'items_qty[]'; qtyInput.value = item.quantity; orderItemsHidden.appendChild(qtyInput); grandTotal += (item.price * item.quantity); }); totalAmountInput.value = grandTotal.toFixed(2); scheduledAtInput.value = isScheduled ? `${bookingDate} ${bookingTime}:00` : ''; });
             const createModalEl = document.getElementById('orderModal'); if (createModalEl) { createModalEl.addEventListener('hidden.bs.modal', () => { cart.clear(); renderCart(); orderForm.reset(); if (scheduleFields) scheduleFields.style.display = 'none'; }); } 
             renderCart(); // Initial render
+            // --- EDIT MODAL CART (shared UI logic for edit modal) ---
+            const editMenuListContainer = document.getElementById('edit-menu-list-container');
+            const editOrderSummaryList = document.getElementById('edit-order-summary-list');
+            const editGrandTotalDisplay = document.getElementById('edit-grand-total');
+            const editOrderItemsHidden = document.getElementById('editOrderItemsHidden');
+            const editOrderItemsHiddenInput = document.getElementById('edit_order_items_hidden');
+            // Use the shared cartEdit and _synthEditId defined in the DOMContentLoaded scope
+
+            function renderCartEdit() {
+              if (!editOrderSummaryList) return;
+              editOrderSummaryList.innerHTML = '';
+              let grandTotal = 0;
+              if (cartEdit.size === 0) {
+                editOrderSummaryList.innerHTML = '<li class="text-center text-muted p-4">No items in the order.</li>';
+                if (editGrandTotalDisplay) editGrandTotalDisplay.textContent = '₱0.00';
+                return;
+              }
+              cartEdit.forEach((item, id) => {
+                const subtotal = (item.price || 0) * (item.quantity || 0);
+                grandTotal += subtotal;
+                const li = document.createElement('li');
+                li.className = 'd-flex align-items-center';
+                li.innerHTML = `
+                  <div class="summary-item-details">
+                    <div class="name">${escapeHtml(item.name)}</div>
+                    <div class="price">₱${(item.price || 0).toFixed(2)}</div>
+                  </div>
+                  <div class="quantity-controls me-3">
+                    <button type="button" data-id="${id}" data-action="decrease">-</button>
+                    <span class="quantity-display">${item.quantity}</span>
+                    <button type="button" data-id="${id}" data-action="increase">+</button>
+                  </div>
+                  <div class="fw-bold me-2" style="min-width: 70px; text-align: right;">₱${subtotal.toFixed(2)}</div>
+                  <button type="button" class="btn btn-sm btn-outline-danger border-0" data-id="${id}" data-action="remove"><i class="bi bi-trash"></i></button>`;
+                editOrderSummaryList.appendChild(li);
+              });
+              if (editGrandTotalDisplay) editGrandTotalDisplay.textContent = '₱' + grandTotal.toFixed(2);
+            }
+
+            // clicking menu items inside edit modal
+            if (editMenuListContainer) {
+              editMenuListContainer.addEventListener('click', (e) => {
+                e.preventDefault();
+                const el = e.target.closest('.menu-list-item');
+                if (!el) return;
+                const id = parseInt(el.dataset.id);
+                const name = el.dataset.name;
+                const price = parseFloat(el.dataset.price) || 0;
+                const stock = parseInt(el.dataset.stock || '0');
+                if (stock <= 0) { alertify.error('This item is out of stock.'); return; }
+                if (cartEdit.has(id)) {
+                  const cur = cartEdit.get(id);
+                  if (cur.quantity + 1 > stock) { alertify.error('Cannot add more. Stock limit reached.'); return; }
+                  cur.quantity++;
+                } else {
+                  cartEdit.set(id, { name, price, quantity: 1, stock });
+                }
+                renderCartEdit();
+              });
+            }
+
+            // quantity controls for edit cart
+            if (editOrderSummaryList) {
+              editOrderSummaryList.addEventListener('click', (e) => {
+                const t = e.target.closest('button');
+                if (!t || !t.dataset.id) return;
+                const id = parseInt(t.dataset.id);
+                const action = t.dataset.action;
+                if (!cartEdit.has(id)) return;
+                if (action === 'increase') {
+                  const cur = cartEdit.get(id);
+                  const stock = cur.stock || parseInt(editMenuListContainer?.querySelector(`.menu-list-item[data-id="${id}"]`)?.dataset?.stock || '0');
+                  if (cur.quantity + 1 > stock) { alertify.error('Cannot increase quantity. Reached stock limit.'); return; }
+                  cur.quantity++;
+                } else if (action === 'decrease') {
+                  const cur = cartEdit.get(id);
+                  if (cur.quantity > 1) cur.quantity--; else cartEdit.delete(id);
+                } else if (action === 'remove') cartEdit.delete(id);
+                renderCartEdit();
+              });
+            }
+
+            // Prefill function used by edit flow (accepts structured details or parsed fallback)
+            function prefillEditCart(details) {
+              cartEdit.clear();
+              if (!details || !Array.isArray(details) || details.length === 0) { renderCartEdit(); return; }
+              const menuEls = editMenuListContainer ? Array.from(editMenuListContainer.querySelectorAll('.menu-list-item')) : [];
+              details.forEach(d => {
+                const name = (d.item_name || d.name || d.items_name || d.product || '').trim();
+                const qty = parseInt(d.quantity || d.qty || d.items_qty || 0) || 1;
+                let price = parseFloat(d.price || d.item_price || d.price || 0) || 0;
+                // try to find matching menu item by name (case-insensitive)
+                let found = null;
+                for (const el of menuEls) {
+                  if ((el.dataset.name || '').trim().toLowerCase() === name.toLowerCase()) { found = el; break; }
+                }
+                if (found) {
+                  const id = parseInt(found.dataset.id);
+                  const menuPrice = parseFloat(found.dataset.price || '0') || 0;
+                  const stock = parseInt(found.dataset.stock || '0') || 0;
+                  if (!price || price === 0) price = menuPrice;
+                  cartEdit.set(id, { name, price, quantity: qty, stock });
+                } else {
+                  // synthetic id for unknown menu items
+                  const sid = _synthEditId--;
+                  cartEdit.set(sid, { name, price: price || 0, quantity: qty, stock: 0 });
+                }
+              });
+              renderCartEdit();
+            }
         }
 
         // --- TABLE ACTION EVENT DELEGATION ---
@@ -789,16 +974,14 @@
             tableBody.addEventListener('click', async function(e) {
                 const target = e.target;
                 const startBtn = target.closest('.start-processing');
-                if (startBtn) { e.preventDefault(); const orderId = startBtn.dataset.orderId; if (!confirm('Start processing order #' + orderId + '?')) return; const formData = new FormData(); formData.append('order_id', orderId); formData.append('status', 'Processing'); formData.append(csrfName, csrfHash); fetch('<?= site_url('OrderController/update_status_ajax') ?>', { method: 'POST', body: formData }).then(r => r.json()).then(json => { updateCsrfFromResponse(json); if (json.success) { alertify.success('Order #' + orderId + ' is now Processing'); loadOrdersForPeriod(tablist.querySelector('.nav-link.active').dataset.period); } else { alertify.error('Failed to update status.'); } }).catch(err => alertify.error('Network error.')); }
+                if (startBtn) { e.preventDefault(); const orderId = startBtn.dataset.orderId; if (!confirm('Start processing order #' + orderId + '?')) return; const formData = new FormData(); formData.append('order_id', orderId); formData.append('status', 'Processing'); formData.append(csrfName, csrfHash); try { const json = await safeFetchJson('<?= site_url('OrderController/update_status_ajax') ?>', { method: 'POST', body: formData }); if (json.success) { alertify.success('Order #' + orderId + ' is now Processing'); const period = tablist.querySelector('.nav-link.active')?.dataset.period || 'all'; loadOrdersForPeriod(period); } else { alertify.error(json.message || 'Failed to update status.'); } } catch (err) { console.error('Update status error:', err); alertify.error('Network or server error updating status.'); } }
         const viewBtn = target.closest('.view-order');
         if (viewBtn) {
           e.preventDefault();
           const orderId = viewBtn.dataset.orderId;
           try {
-            const res = await fetch(`<?= site_url('OrderController/get_order_ajax?id=') ?>${orderId}`);
-            const json = await res.json();
-            updateCsrfFromResponse(json);
-            if (json.success && json.order) {
+            const json = await safeFetchJson(`<?= site_url('OrderController/get_order_ajax?id=') ?>${orderId}`);
+            if (json && json.success && json.order) {
               const order = json.order;
               const details = json.details || [];
               document.getElementById('viewOrderId').textContent = '#' + order.order_id;
@@ -839,31 +1022,131 @@
               alertify.error(json.message || 'Could not load order details');
             }
           } catch (err) {
-            console.error(err);
-            alertify.error('Network error loading order details');
+            console.error('Get order error:', err);
+            alertify.error(err.message || 'Network error loading order details');
           }
         }
                 const editBtn = target.closest('.btn-edit-order');
-                if (editBtn) { e.preventDefault(); const orderId = editBtn.dataset.id; const editOrderModal = new bootstrap.Modal(document.getElementById('editOrderModal')); try { const res = await fetch(`<?= site_url('OrderController/get_order_ajax?id=') ?>${orderId}`); const result = await res.json(); updateCsrfFromResponse(result); if (result.success && result.order) { const order = result.order; document.getElementById('edit_order_id').value = order.order_id; document.getElementById('edit_customer_name').value = order.customer_name; document.getElementById('edit_order_items').value = order.order_items; document.getElementById('edit_total_amount').value = order.total_amount; document.getElementById('edit_status').value = order.status; const imageDisplay = document.getElementById('current_image_display'); imageDisplay.innerHTML = order.image ? `<img src="<?= base_url('uploads/') ?>${order.image}" class="order-img" alt="Current Image">` : `<span class="text-muted small">No Image</span>`; editOrderModal.show(); } else { alertify.error(result.message || 'Could not fetch order details.'); } } catch (error) { alertify.error('An error occurred while fetching details.'); } }
+                if (editBtn) {
+                  e.preventDefault();
+                  const orderId = editBtn.dataset.id;
+                  const editOrderModal = new bootstrap.Modal(document.getElementById('editOrderModal'));
+
+                  // Immediate prefill from the table row so the modal opens quickly with available data
+                  try {
+                    const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+                    if (row) {
+                      // Columns: 0:id,1:order by,2:customer,3:items,4:total,5:status,...
+                      const customerCell = row.children[2];
+                      const itemsCell = row.children[3];
+                      const totalCell = row.children[4];
+                      const statusCell = row.children[5];
+
+                      if (customerCell) document.getElementById('edit_customer_name').value = (customerCell.textContent || '').trim();
+                      if (totalCell) {
+                        // remove currency symbol and commas
+                        const totalText = (totalCell.textContent || '').replace(/[^0-9\.\-]/g, '').trim();
+                        const totalNum = parseFloat(totalText) || 0;
+                        const totalEl = document.getElementById('edit_total_amount');
+                        if (totalEl) totalEl.value = totalNum.toFixed(2);
+                      }
+                      if (statusCell) {
+                        const statusText = (statusCell.textContent || '').trim();
+                        const statusSelect = document.getElementById('edit_status');
+                        if (statusSelect) {
+                          // try to match option by text
+                          Array.from(statusSelect.options).forEach(opt => { if (opt.text.toLowerCase() === statusText.toLowerCase()) opt.selected = true; });
+                        }
+                      }
+
+                      // Parse items cell into `{item_name, quantity}` objects and prefill cart
+                      if (itemsCell && typeof prefillEditCart === 'function') {
+                        try {
+                          const raw = itemsCell.textContent || '';
+                          const parsed = raw.split(',').map(piece => {
+                            const m = piece.trim().match(/^(\d+)\s*x\s*(.+)$/i);
+                            if (m) return { item_name: m[2].trim(), quantity: parseInt(m[1], 10), price: 0 };
+                            const name = piece.trim();
+                            return name ? { item_name: name, quantity: 1, price: 0 } : null;
+                          }).filter(Boolean);
+                          prefillEditCart(parsed);
+                        } catch (ex) {
+                          console.error('Error parsing items from row for immediate prefill:', ex);
+                        }
+                      }
+                    }
+                  } catch (ex) {
+                    console.error('Immediate prefill failed:', ex);
+                  }
+
+                  // Then fetch full details to refine/override fields
+                  try {
+                    const result = await safeFetchJson(`<?= site_url('OrderController/get_order_ajax?id=') ?>${orderId}`);
+                    if (result && result.success && result.order) {
+                      const order = result.order;
+                      document.getElementById('edit_order_id').value = order.order_id;
+                      document.getElementById('edit_customer_name').value = order.customer_name || '';
+                      document.getElementById('edit_status').value = order.status || 'New';
+                      const imageDisplay = document.getElementById('current_image_display');
+                      imageDisplay.innerHTML = order.image ? `<img src="<?= base_url('uploads/') ?>${order.image}" class="order-img" alt="Current Image">` : `<span class="text-muted small">No Image</span>`;
+                      // Prefill cart if structured details exist, otherwise keep the table-based prefill
+                      if (typeof prefillEditCart === 'function') {
+                        const details = result.details || [];
+                        if (details && details.length > 0) prefillEditCart(details);
+                      }
+                      editOrderModal.show();
+                    } else {
+                      alertify.error(result.message || 'Could not fetch order details.');
+                    }
+                  } catch (error) {
+                    console.error('Fetch order for edit error:', error);
+                    alertify.error(error.message || 'An error occurred while fetching details.');
+                  }
+                }
             });
         }
         
         // --- EDIT ORDER MODAL SUBMISSION ---
         const editOrderForm = document.getElementById('editOrderForm');
         if (editOrderForm) {
-            editOrderForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const formData = new FormData(editOrderForm);
-                try {
-                    const res = await fetch('<?= site_url('OrderController/update_order_ajax') ?>', { method: 'POST', body: formData });
-                    const result = await res.json();
-                    updateCsrfFromResponse(result);
-                    if (result.success) {
-                        alertify.success('Order updated successfully!');
-                        bootstrap.Modal.getInstance(document.getElementById('editOrderModal')).hide();
-                        loadOrdersForPeriod(tablist.querySelector('.nav-link.active').dataset.period);
-                    } else { alertify.error(result.message || 'Failed to update order.'); }
-                } catch (error) { alertify.error('An error occurred while updating the order.'); }
+      editOrderForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        // serialize cartEdit into hidden inputs for server
+        const editOrderItemsHiddenEl = document.getElementById('editOrderItemsHidden');
+        const editOrderItemsHiddenInputEl = document.getElementById('edit_order_items_hidden');
+        if (editOrderItemsHiddenEl) editOrderItemsHiddenEl.innerHTML = '';
+        if (editOrderItemsHiddenInputEl) editOrderItemsHiddenInputEl.value = '';
+        let grandTotalEdit = 0;
+          // Build a human-readable summary for order_items column (e.g., "2x Burger, 1x Fries")
+          const summaryPieces = [];
+        cartEdit.forEach((item, id) => {
+          // use numeric menu id when available, otherwise synthetic ids will be ignored by server
+          const idx = document.createElement('input'); idx.type = 'hidden'; idx.name = 'items_menu_id[]'; idx.value = id > 0 ? id : '';
+          editOrderItemsHiddenEl && editOrderItemsHiddenEl.appendChild(idx);
+          const nameInput = document.createElement('input'); nameInput.type = 'hidden'; nameInput.name = 'items_name[]'; nameInput.value = item.name; editOrderItemsHiddenEl && editOrderItemsHiddenEl.appendChild(nameInput);
+          const priceInput = document.createElement('input'); priceInput.type = 'hidden'; priceInput.name = 'items_price[]'; priceInput.value = (item.price || 0).toFixed(2); editOrderItemsHiddenEl && editOrderItemsHiddenEl.appendChild(priceInput);
+          const qtyInput = document.createElement('input'); qtyInput.type = 'hidden'; qtyInput.name = 'items_qty[]'; qtyInput.value = item.quantity; editOrderItemsHiddenEl && editOrderItemsHiddenEl.appendChild(qtyInput);
+          grandTotalEdit += (item.price || 0) * (item.quantity || 0);
+          // also add to the human-readable summary pieces
+          try { summaryPieces.push((item.quantity || 0) + 'x ' + (item.name || '').trim()); } catch (e) { /* ignore */ }
+        });
+          if (editOrderItemsHiddenInputEl) editOrderItemsHiddenInputEl.value = summaryPieces.join(', ');
+        const totalEl = document.getElementById('edit_total_amount'); if (totalEl) totalEl.value = grandTotalEdit.toFixed(2);
+        const formData = new FormData(editOrderForm);
+        try {
+          const result = await safeFetchJson('<?= site_url('OrderController/update_order_ajax') ?>', { method: 'POST', body: formData });
+          if (result.success) {
+            alertify.success('Order updated successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('editOrderModal')).hide();
+            const period = tablist.querySelector('.nav-link.active')?.dataset.period || 'all';
+            loadOrdersForPeriod(period);
+          } else {
+            alertify.error(result.message || 'Failed to update order.');
+          }
+        } catch (error) {
+          console.error('Update order error:', error);
+          alertify.error(error.message || 'An error occurred while updating the order.');
+        }
             });
         }
     });
