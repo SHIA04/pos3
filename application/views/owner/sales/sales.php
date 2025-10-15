@@ -43,7 +43,7 @@
         background-color: #f0e8ff;
     }
     .stat-card .info .title { font-weight: 500; color: #8c7aa8; font-size: 0.9rem; margin-bottom: 0; }
-    .stat-card .info .total { font-size: 1.8rem; font-weight: 700; color: rebeccapurple; }
+    .stat-card .info .total { font-size: 1.2rem; font-weight: 700; color: rebeccapurple; }
 
     .chart-panel {
         background-color: #ffffff;
