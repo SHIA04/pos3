@@ -14,6 +14,8 @@ class MenuModel extends CI_Model {
         // Join with inventory table to include stock_quantity when available
         $this->db->select('m.*, COALESCE(tmi.stock_quantity, 0) as stock_quantity');
         $this->db->from('menu_tbl m');
+        // Only return items marked Available
+        $this->db->where('m.status', 'Available');
         $this->db->join('tbl_menu_items tmi', 'tmi.menu_id = m.menu_id', 'left');
         $this->db->order_by('m.date_created', 'DESC');
         $query = $this->db->get();

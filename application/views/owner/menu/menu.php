@@ -647,38 +647,56 @@
             });
         }
 
-        // Handle delete buttons
+        // Handle delete buttons with duplicate-submission protection
         document.addEventListener('click', function(e){
             var delBtn = e.target.closest('.btn-delete');
             if(!delBtn) return;
 
             var id = delBtn.dataset.id;
 
-                function performDelete(){
+            function performDelete(){
+                // Prevent double submissions
+                if (delBtn.dataset.deleting) return;
+                delBtn.dataset.deleting = '1';
+                delBtn.disabled = true;
+
                 var fd = new FormData();
                 // include csrf
                 var csrfField = document.getElementById('csrf_token_field');
                 if(csrfField){ fd.append(csrfField.name, csrfField.value); }
                 fd.append('menu_id', id);
+
                 fetch('<?php echo site_url('owner/menu/delete'); ?>', { method: 'POST', body: fd, credentials: 'include', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                    .then(function(res){ return parseFetchResponse(res); }).then(function(json){
+                    .then(function(res){ return parseFetchResponse(res); })
+                    .then(function(json){
+                        // If server provided fresh CSRF tokens, always update the form field
+                        if (json && json.csrf_token_name && json.csrf_hash) {
+                            var f = document.getElementById('csrf_token_field');
+                            if (f) { f.name = json.csrf_token_name; f.value = json.csrf_hash; }
+                        }
+
                         if(json && json.success){
                             var card = findCard(id);
                             if(card) card.remove();
-                            // update csrf
-                            if(json.csrf_token_name && json.csrf_hash){ var f = document.getElementById('csrf_token_field'); if(f){ f.name = json.csrf_token_name; f.value = json.csrf_hash; } }
                             if(typeof alertify !== 'undefined') alertify.success('Item deleted');
                         } else {
                             if(json && (json.__non_json || json.__parse_error)){
                                 console.error('Server error or non-JSON response for POST menu/delete', json.status, json.text);
-                                alert('Server returned an error (see console).');
+                                if(typeof alertify !== 'undefined') alertify.error('Server error — please refresh the page and try again');
+                                else alert('Server error — please refresh the page and try again');
                             } else {
                                 if(typeof alertify !== 'undefined') alertify.error(json.message || 'Delete failed');
                             }
                         }
-                    }).catch(function(err){
+                    })
+                    .catch(function(err){
                         console.error('Delete request failed', err);
                         if(typeof alertify !== 'undefined') alertify.error('Delete request failed');
+                    })
+                    .finally(function(){
+                        // Re-enable button
+                        delete delBtn.dataset.deleting;
+                        try { delBtn.disabled = false; } catch(e){}
                     });
             }
 

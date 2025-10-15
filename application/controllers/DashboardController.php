@@ -38,7 +38,7 @@ class DashboardController extends CI_Controller
         $dailySales = $this->OrderModel->get_sales_total('daily');
         $data['todays_sales'] = (float)$dailySales;
 
-        // Today's Profit: approximate using a margin (30%) if cost not available
+        // Today's Profit: approximate using a margin (30%) if cost Unavailable
         $margin = 0.30; // default profit margin assumption
         $data['todays_profit'] = $data['todays_sales'] * $margin;
 
@@ -333,17 +333,35 @@ class DashboardController extends CI_Controller
         }
 
         $this->load->database();
-        // Optionally remove image file
-        $row = $this->db->get_where('menu_tbl', ['menu_id' => $id])->row_array();
-        if ($row && !empty($row['image']) && file_exists(FCPATH . $row['image'])) {
-            @unlink(FCPATH . $row['image']);
-        }
+        // First, check if any related inventory has stock > 0. If so, refuse to mark Unavailable.
+        $this->db->from('tbl_menu_items');
+        $this->db->where('menu_id', $id);
+        $this->db->where('stock_quantity >', 0);
+        $has_stock = (bool)$this->db->count_all_results();
 
-        $this->db->where('menu_id', $id)->delete('menu_tbl');
         $csrf_name = $this->security->get_csrf_token_name();
         $csrf_hash = $this->security->get_csrf_hash();
+
+        if ($has_stock) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Cannot delete it related inventory has stock greater than zero.', 'csrf_token_name' => $csrf_name, 'csrf_hash' => $csrf_hash]);
+            return;
+        }
+
+        // No stock found: perform the status update and deactivate inventory rows if applicable.
+        $this->db->trans_start();
+        $this->db->where('menu_id', $id)->update('menu_tbl', ['status' => 'Unavailable']);
+        if ($this->db->table_exists('tbl_menu_items') && $this->db->field_exists('is_active', 'tbl_menu_items')) {
+            $this->db->where('menu_id', $id)->update('tbl_menu_items', ['is_active' => 0]);
+        }
+        $this->db->trans_complete();
+
         header('Content-Type: application/json');
-        echo json_encode(['success' => true, 'csrf_token_name' => $csrf_name, 'csrf_hash' => $csrf_hash]);
+        if ($this->db->trans_status()) {
+            echo json_encode(['success' => true, 'message' => 'Item marked Unavailable.', 'csrf_token_name' => $csrf_name, 'csrf_hash' => $csrf_hash]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to update item status.', 'csrf_token_name' => $csrf_name, 'csrf_hash' => $csrf_hash]);
+        }
     }
 
     public function orders()
@@ -542,10 +560,27 @@ class DashboardController extends CI_Controller
         // Start transaction: update stock and insert inventory detail record
         $this->db->trans_start();
 
+        // Find related menu_id (if any) so we can restore menu status later
+        $menu_id = null;
+        $row = $this->db->get_where('tbl_menu_items', ['item_id' => $item_id])->row_array();
+        if ($row && isset($row['menu_id'])) {
+            $menu_id = $row['menu_id'];
+        }
+
         // Increment stock_quantity safely
         $this->db->set('stock_quantity', 'stock_quantity + ' . $this->db->escape_str($qty), false);
         $this->db->where('item_id', $item_id);
         $this->db->update('tbl_menu_items');
+
+        // If we have a linked menu_id, also ensure inventory row is active and menu status set to Available
+        if ($menu_id) {
+            // reactivate inventory row if column exists
+            if ($this->db->field_exists('is_active', 'tbl_menu_items')) {
+                $this->db->where('item_id', $item_id)->update('tbl_menu_items', ['is_active' => 1]);
+            }
+            // set menu master back to Available
+            $this->db->where('menu_id', $menu_id)->update('menu_tbl', ['status' => 'Available']);
+        }
 
         // Try to record detail in tbl_inventory_details. Prefer richer schema (quantity/action),
         // fall back to minimal insert (item_id only) if the richer fields/columns are not present.
