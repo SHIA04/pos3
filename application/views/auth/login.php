@@ -139,6 +139,9 @@
       cursor: pointer;
       border-left: 0;
     }
+     .forgot-password-link {
+        font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
@@ -189,15 +192,19 @@
                 <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password">
                 <span class="input-group-text password-toggle-icon" id="togglePassword"><i class="bi bi-eye-slash"></i></span>
             </div>
-          </div>
+        </div>
 
-          <div class="d-grid mt-4">
-            <button type="submit" class="btn btn-purple">Login</button>
-          </div>
+    <div class="mb-3 form-check">
+      <input type="checkbox" name="remember_me" class="form-check-input" id="rememberMe">
+      <label class="form-check-label" for="rememberMe">Remember me</label>
+    </div>
 
-          <p class="text-center mt-4 text-muted">
-            Don't have an account? <a href="<?= site_url('auth/signup'); ?>" class="text-decoration-none fw-bold" style="color: var(--primary-color);">Sign up here</a>
-          </p>
+        <div class="d-grid">
+            <button type="submit" id="loginSubmitBtn" class="btn btn-purple">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
+                <span class="button-text">Login</span>
+            </button>
+        </div>
         </form>
       </div>
     </div>

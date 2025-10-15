@@ -15,6 +15,8 @@
   <!-- AlertifyJS -->
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/bootstrap.min.css"/>
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
   <style>
     /* --- NEW & IMPROVED DESIGN --- */
@@ -177,7 +179,8 @@
 <div class="sidebar d-none d-lg-flex flex-column">
   <h1><b>OWNER DASHBOARD</b></h1>
   <nav>
-    <a href="<?php echo site_url('dashboard'); ?>" ><i class="bi bi-speedometer2"></i> Dashboard</a>
+    <a href="<?php echo site_url('dashboard'); ?>"><i class="bi bi-speedometer2"></i> Dashboard</a>
+    <a href="<?php echo site_url('owner/staff'); ?>" ><i class="bi bi-people-fill"></i> Staff</a>
     <a href="<?php echo site_url('owner/menu'); ?>"><i class="bi bi-journal-text"></i> Menu</a>
     <a href="<?php echo site_url('owner/orders'); ?>"><i class="bi bi-basket"></i> Orders</a>
     <a href="<?php echo site_url('owner/inventory'); ?>" class="active"><i class="bi bi-box-seam"></i> Inventory</a>
@@ -450,6 +453,10 @@
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
+<!-- jQuery & DataTables (for search + simple prev/next pagination) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // --- CSRF TOKEN MANAGEMENT ---
@@ -490,6 +497,33 @@ document.addEventListener('DOMContentLoaded', function() {
             restockModal.querySelector('#quantity_to_add').focus();
         });
     }
+
+      // Initialize DataTable for inventory table: enable search box and simple prev/next pagination
+      try {
+        // convert the existing table to a DataTable with Bootstrap styling
+        if (window.jQuery && $.fn.dataTable) {
+          const table = $('table.table').DataTable({
+            pagingType: 'simple_numbers', // shows prev/next and page numbers
+            pageLength: 10,
+            lengthChange: false,
+            responsive: true,
+            language: {
+              search: '',
+              searchPlaceholder: 'Search inventory...'
+            },
+            columnDefs: [ { orderable: false, targets: -1 } ]
+          });
+
+          // Move the search box to top-right of the panel header
+          const searchEl = $(table.table().container()).find('div.dataTables_filter');
+          if (searchEl.length) {
+            $('.panel-header').append(searchEl);
+            searchEl.css({'margin-left':'auto'});
+          }
+        }
+      } catch (e) {
+        console.error('DataTables init failed', e);
+      }
 
     // --- EDIT ITEM MODAL ---
     document.querySelectorAll('.edit-inv-btn').forEach(btn => {

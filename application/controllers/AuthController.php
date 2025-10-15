@@ -8,6 +8,34 @@ class AuthController extends CI_Controller {
         $this->load->helper(['url', 'form', 'security']);
         $this->load->library(['session', 'form_validation']);
         $this->load->model(['SignupModel', 'LoginModel']);
+
+        // Load RememberModel if exists (for "Remember Me" feature)
+        if (file_exists(APPPATH . 'models/RememberModel.php')) {
+            $this->load->model('RememberModel');
+            // Attempt auto-login via remember cookie if session is not active
+            if (!$this->session->userdata('logged_in')) {
+                $cookieName = 'rf_pos_remember';
+                if (!empty($_COOKIE[$cookieName])) {
+                    $token = $_COOKIE[$cookieName];
+                    // token stored as raw (not hashed) in cookie; we will hash on DB compare
+                    $token_hash = hash('sha256', $token);
+                    $rec = $this->RememberModel->find_by_hash($token_hash);
+                    if ($rec && isset($rec->signup_id)) {
+                        // load user and set session
+                        $user = $this->db->get_where('tbl_signup', ['signup_id' => $rec->signup_id])->row();
+                        if ($user) {
+                            $this->session->set_userdata([
+                                'signup_id' => $user->signup_id,
+                                'user_id' => $user->signup_id,
+                                'username' => $user->username,
+                                'role' => $user->role,
+                                'logged_in' => TRUE
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // Default route: go to signup page
@@ -309,6 +337,23 @@ class AuthController extends CI_Controller {
             // Since your view folder is views/dashboard, route everyone to /dashboard controller
             $redirectPath = ($role === 'owner' ? 'owner/dashboard' : 'staff/dashboard');
 
+            // Handle "Remember Me" checkbox: create persistent token if requested
+            try {
+                $remember = $this->input->post('remember_me') ? TRUE : FALSE;
+            } catch (Exception $e) {
+                $remember = FALSE;
+            }
+
+            if (!empty($remember) && isset($this->RememberModel)) {
+                // raw token for cookie
+                $raw = bin2hex(random_bytes(32));
+                $hash = hash('sha256', $raw);
+                $expires = date('Y-m-d H:i:s', time() + (30*24*60*60)); // 30 days
+                $this->RememberModel->create($user->signup_id, $hash, $expires);
+                // set cookie (HttpOnly, Secure if using HTTPS)
+                setcookie('rf_pos_remember', $raw, time() + (30*24*60*60), '/', '', isset($_SERVER['HTTPS']), true);
+            }
+
             if ($isAjax) {
                 return $this->output
                     ->set_content_type('application/json')
@@ -348,6 +393,16 @@ class AuthController extends CI_Controller {
         // Unset correct keys based on tbl_signup
         $this->session->unset_userdata(['signup_id', 'username', 'role', 'logged_in']);
         $this->session->sess_destroy();
+        // Clear remember cookie and mark tokens used for this user if model available
+        $cookieName = 'rf_pos_remember';
+        if (!empty($_COOKIE[$cookieName])) {
+            // expire cookie
+            setcookie($cookieName, '', time() - 3600, '/', '', isset($_SERVER['HTTPS']), true);
+        }
+        if (isset($this->RememberModel) && $this->session->userdata('signup_id')) {
+            // mark any tokens for this user as used
+            $this->db->where('signup_id', $this->session->userdata('signup_id'))->update('remember_tokens', ['used' => 1]);
+        }
         $this->output->set_header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
         $this->output->set_header('Pragma: no-cache');
         $this->session->set_flashdata('success', 'You have been logged out successfully.');

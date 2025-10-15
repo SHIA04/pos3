@@ -75,12 +75,13 @@
 <div class="sidebar d-none d-lg-flex flex-column">
   <h1><b>OWNER DASHBOARD</b></h1>
   <nav>
-    <a href="<?php echo site_url('dashboard'); ?>" ><i class="bi bi-speedometer2"></i> Dashboard</a>
+    <a href="<?php echo site_url('dashboard'); ?>"><i class="bi bi-speedometer2"></i> Dashboard</a>
+    <a href="<?php echo site_url('owner/staff'); ?>"><i class="bi bi-people-fill"></i> Staff</a>
     <a href="<?php echo site_url('owner/menu'); ?>"><i class="bi bi-journal-text"></i> Menu</a>
     <a href="<?php echo site_url('owner/orders'); ?>"><i class="bi bi-basket"></i> Orders</a>
     <a href="<?php echo site_url('owner/inventory'); ?>" ><i class="bi bi-box-seam"></i> Inventory</a>
     <a href="<?php echo site_url('owner/sales'); ?>" class="active"><i class="bi bi-cash-stack"></i> Sales</a>
-    <a href="<?php echo site_url('owner/settings'); ?>" ><i class="bi bi-gear"></i> Settings</a>
+    <a href="<?php echo site_url('owner/settings'); ?>"><i class="bi bi-gear"></i> Settings</a>
   </nav>
   <a href="<?php echo site_url('auth/logout'); ?>" class="logout-btn mt-auto"><i class="bi bi-box-arrow-right"></i> Logout</a>
 </div>

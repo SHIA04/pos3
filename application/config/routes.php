@@ -33,6 +33,11 @@ $route['auth/logout']         = 'AuthController/logout';
 $route['dashboard']        = 'DashboardController/index';
 $route['owner/dashboard']  = 'DashboardController/index';
 $route['owner/menu']  = 'DashboardController/menu';
+$route['owner/staff']  = 'DashboardController/staffRegister';
+$route['owner/staff/create'] = 'DashboardController/create_staff';
+// AJAX / helper endpoints for staff
+$route['owner/staff/get'] = 'DashboardController/get_staff';
+$route['owner/staff/update'] = 'DashboardController/update_staff';
 $route['owner/menu/add'] = 'DashboardController/add_menu_item';
 $route['owner/menu/get'] = 'DashboardController/get_menu_item';
 $route['owner/menu/update'] = 'DashboardController/update_menu_item';

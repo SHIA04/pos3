@@ -6,51 +6,37 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | Email Configuration - Gmail SMTP Example
 |--------------------------------------------------------------------------
 |
-| Copy this file to your CodeIgniter `application/config/` if it does not
-| already exist. This example uses Gmail's SMTP server. For security, use
-| an App Password (recommended) rather than your account password.
+| This configuration allows CodeIgniter 3 to send emails using Gmail SMTP.
+| Make sure to use a Gmail App Password (not your actual Gmail password).
 |
-| Notes:
-| - If you have 2FA on your Google account, create an App Password and use it
-|   instead of your regular password.
-| - For local development, consider using MailHog/Mailtrap and change the
-|   SMTP host/port accordingly.
-| - Keep credentials out of version control; prefer environment variables.
+| For local testing, you can also use Mailtrap or MailHog.
+| Keep credentials private and do not push this file to public repos.
+|
 */
 
-$mailer = getenv('MAILER') ?: 'gmail';
-
-$config = array(
-    'protocol' => 'smtp',
-    // Choose host/port/user/pass based on MAILER env var: 'gmail' (default), 'mailtrap', 'mailhog'
-    'smtp_host' => ($mailer === 'mailtrap') ? 'smtp.mailtrap.io' : (($mailer === 'mailhog') ? '127.0.0.1' : 'ssl://smtp.gmail.com'),
-    'smtp_port' => ($mailer === 'mailtrap') ? 2525 : (($mailer === 'mailhog') ? 1025 : 465),
-    'smtp_user' => ($mailer === 'mailtrap') ? (getenv('MAILTRAP_USER') ?: 'your_mailtrap_user') : (getenv('SMTP_USER') ?: 'your@gmail.com'),
-    'smtp_pass' => ($mailer === 'mailtrap') ? (getenv('MAILTRAP_PASS') ?: 'your_mailtrap_pass') : (getenv('SMTP_PASS') ?: 'your_app_password'),
-    'smtp_timeout' => 30,
-    'charset' => 'utf-8',
-    'mailtype' => 'html',
-    'wordwrap' => TRUE,
-    'newline' => "\r\n",
-    'crlf' => "\r\n"
-);
+$config['protocol']    = 'smtp';
+$config['smtp_host']   = 'smtp.gmail.com';
+$config['smtp_port']   = 587;
+$config['smtp_user']   = 'jaytagolimotreyes@gmail.com';  // your Gmail
+$config['smtp_pass']   = 'knhidkynvkkcfofv';             // your App Password
+$config['smtp_crypto'] = 'tls';
+$config['mailtype']    = 'html';
+$config['charset']     = 'utf-8';
+$config['newline']     = "\r\n";
+$config['crlf']        = "\r\n";  // ensures proper line breaks
+$config['wordwrap']    = TRUE;
+$config['priority']    = 1;
 
 /*
-Example environment variables (Windows PowerShell):
-# Gmail (use App Password if you have 2FA enabled)
-$env:MAILER = 'gmail'
-$env:SMTP_USER = 'your@gmail.com'
-$env:SMTP_PASS = 'your_app_password'
-
-# Mailtrap (recommended for local dev - create an inbox and copy credentials)
-$env:MAILER = 'mailtrap'
-$env:MAILTRAP_USER = 'your_mailtrap_user'
-$env:MAILTRAP_PASS = 'your_mailtrap_pass'
-
-# MailHog (local SMTP server, no auth; run MailHog and set MAILER=mailhog)
-$env:MAILER = 'mailhog'
-
-Or add to your system environment variables or an .env loader.
+|--------------------------------------------------------------------------
+| Optional: Load via environment variables
+|--------------------------------------------------------------------------
+| You can replace the hardcoded credentials above with:
+| getenv('SMTP_USER') and getenv('SMTP_PASS') for better security.
+|
+| Example:
+| $config['smtp_user'] = getenv('SMTP_USER');
+| $config['smtp_pass'] = getenv('SMTP_PASS');
+|
 */
 
-return $config;

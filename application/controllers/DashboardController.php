@@ -759,4 +759,265 @@ class DashboardController extends CI_Controller
         if ($this->db->affected_rows() >= 0) echo json_encode(['success' => true, 'item' => array_merge(['item_id' => $id, 'category' => $resp_category], $update), 'csrf_token_name' => $csrf_name, 'csrf_hash' => $csrf_hash]);
         else echo json_encode(['success' => false, 'message' => 'Update failed', 'csrf_token_name' => $csrf_name, 'csrf_hash' => $csrf_hash]);
     }
+
+    public function staffRegister()
+    {
+        // Optional: ensure user is logged in
+        if (!$this->session->userdata('logged_in')) {
+            redirect('auth/login');
+            return;
+        }
+
+        // Load SignupModel and fetch staff users
+        $this->load->model('SignupModel');
+        $data = [];
+        $data['staff_list'] = $this->SignupModel->get_by_role('staff');
+
+        // Load your staff registration view with staff data
+        if (file_exists(APPPATH.'views/owner/staff/staffRegister.php')) {
+            $this->load->view('owner/staff/staffRegister', $data);
+        } else {
+            show_404();
+        }
+    }
+
+    /**
+     * Handle owner-created staff accounts (POST)
+     * Route: owner/staff/create
+     */
+    public function create_staff()
+    {
+        if ($this->input->server('REQUEST_METHOD') !== 'POST') {
+            show_404();
+            return;
+        }
+
+        if ($this->session->userdata('role') !== 'owner') {
+            $this->session->set_flashdata('error', 'Permission denied.');
+            redirect('owner/staff');
+            return;
+        }
+
+        // Validation
+        $this->form_validation->set_rules('fullname', 'Full Name', 'required|regex_match[/^[a-zA-Z\s]+$/]');
+        $this->form_validation->set_rules('username', 'Username', 'required|trim|min_length[4]|max_length[20]');
+        $this->form_validation->set_rules('age', 'Age', 'required|integer|greater_than[0]|less_than[120]');
+        $this->form_validation->set_rules('sex', 'Sex', 'required');
+        $this->form_validation->set_rules('birthday', 'Birthday', 'required');
+        $this->form_validation->set_rules('role', 'Role', 'required|in_list[staff,cashier,chef]');
+        $this->form_validation->set_rules('phone_number', 'Phone Number', 'required|exact_length[11]|numeric');
+        $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
+        $this->form_validation->set_rules('password', 'Password', 'required|min_length[8]');
+        $this->form_validation->set_rules('confirm_password', 'Confirm Password', 'required|matches[password]');
+
+        if ($this->form_validation->run() === FALSE) {
+            $errors = explode("\n", strip_tags(validation_errors()));
+            $this->session->set_flashdata('error', implode('<br>', $errors));
+            redirect('owner/staff');
+            return;
+        }
+
+        $email = $this->input->post('email', TRUE);
+        $username = $this->input->post('username', TRUE);
+
+        if ($this->SignupModel->email_exists($email) || $this->SignupModel->username_exists($username)) {
+            $msgs = [];
+            if ($this->SignupModel->email_exists($email)) $msgs[] = 'Email already exists';
+            if ($this->SignupModel->username_exists($username)) $msgs[] = 'Username already exists';
+            $this->session->set_flashdata('error', implode('<br>', $msgs));
+            redirect('owner/staff');
+            return;
+        }
+
+        $plain_password = $this->input->post('password', TRUE);
+
+        $data = [
+            'fullname' => xss_clean($this->input->post('fullname', TRUE)),
+            'username' => xss_clean($username),
+            'age' => (int)$this->input->post('age', TRUE),
+            'sex' => xss_clean($this->input->post('sex', TRUE)),
+            'birthday' => xss_clean($this->input->post('birthday', TRUE)),
+            'role' => xss_clean($this->input->post('role', TRUE)),
+            'phone_number' => xss_clean($this->input->post('phone_number', TRUE)),
+            'email' => xss_clean($email),
+            'password' => password_hash($plain_password, PASSWORD_BCRYPT),
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+
+        // Handle profile image upload
+        if (!empty($_FILES['profile_image']['name'])) {
+            $config['upload_path'] = FCPATH . 'uploads/profile_images/';
+            if (!is_dir($config['upload_path'])) mkdir($config['upload_path'], 0755, true);
+            $config['allowed_types'] = 'jpg|jpeg|png';
+            $config['max_size'] = 2048;
+            $config['encrypt_name'] = TRUE;
+            $this->load->library('upload', $config);
+
+            if ($this->upload->do_upload('profile_image')) {
+                $d = $this->upload->data();
+                $data['profile_image'] = 'uploads/profile_images/' . $d['file_name'];
+            } else {
+                $this->session->set_flashdata('error', strip_tags($this->upload->display_errors()));
+                redirect('owner/staff');
+                return;
+            }
+        }
+
+        // Insert and send email
+        $insert_ok = $this->SignupModel->insert_user($data);
+
+        // Prepare CSRF tokens for response
+        $csrf_name = $this->security->get_csrf_token_name();
+        $csrf_hash = $this->security->get_csrf_hash();
+
+        // If this is an AJAX request (fetch/X-Requested-With), return JSON so the client can update UI without reload
+        $is_ajax = ($this->input->is_ajax_request() || !empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($this->input->get_request_header('X-Requested-With', TRUE)) === 'xmlhttprequest');
+
+        if ($insert_ok) {
+            // send welcome email including username and the plaintext password provided on creation
+            $this->send_welcome_email($email, $data['fullname'], $data['username'], $plain_password);
+            // concise success flash for non-AJAX
+            $this->session->set_flashdata('success', 'Staff added successfully');
+
+            if ($is_ajax) {
+                // fetch the newly inserted row to return to client (by username/email)
+                $this->load->database();
+                $row = $this->db->get_where('tbl_signup', ['email' => $email])->row_array();
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => 'Staff added successfully', 'item' => $row, 'csrf_token_name' => $csrf_name, 'csrf_hash' => $csrf_hash]);
+                return;
+            }
+        } else {
+            // failure path
+            $this->session->set_flashdata('error', 'Failed to create staff account.');
+            if ($is_ajax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Failed to create staff account.', 'csrf_token_name' => $csrf_name, 'csrf_hash' => $csrf_hash]);
+                return;
+            }
+        }
+
+        // Non-AJAX fallback: redirect back to staff page (flash messages are set)
+        redirect('owner/staff');
+    }
+
+    private function send_welcome_email($email, $fullname, $username = null, $plain_password = null)
+    {
+        // Ensure Email library is loaded and initialized
+        if (!isset($this->email) || !is_object($this->email)) {
+            // This will pick up configuration from application/config/email.php
+            $this->load->library('email');
+        }
+
+        // Load your email config and set sender
+        // Reset and configure email
+        $this->email->clear(TRUE);
+        $this->email->set_mailtype('html');
+        $this->email->from('jaytagolimotreyes@gmail.com', 'System Admin');
+        $this->email->to($email);
+        $this->email->subject('Welcome to Our Team!');
+        $creds_html = '';
+        if ($username !== null && $plain_password !== null) {
+            $u = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
+            $p = htmlspecialchars($plain_password, ENT_QUOTES, 'UTF-8');
+            $creds_html = "<p><strong>Username:</strong> {$u}<br><strong>Password:</strong> {$p}</p>";
+        }
+
+        $this->email->message("<h2>Hello, {$fullname}!</h2>
+            <p>Welcome to our system. Your staff account has been successfully created.</p>
+            {$creds_html}
+            <p>Please log in using your registered credentials.</p>
+            <br>
+            <p>Best regards,<br><strong>The Admin Team</strong></p>");
+
+        if (!$this->email->send()) {
+            log_message('error', 'Failed to send welcome email to ' . $email . ': ' . $this->email->print_debugger());
+        }
+    }
+
+    /**
+     * Return a single staff user as JSON (GET ?id=)
+     */
+    public function get_staff()
+    {
+        $id = $this->input->get('id');
+        if (empty($id)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Missing id']);
+            return;
+        }
+        $this->load->database();
+        $row = $this->db->get_where('tbl_signup', ['signup_id' => $id])->row_array();
+        $csrf_name = $this->security->get_csrf_token_name();
+        $csrf_hash = $this->security->get_csrf_hash();
+        header('Content-Type: application/json');
+        if ($row) echo json_encode(['success' => true, 'item' => $row, 'csrf_token_name' => $csrf_name, 'csrf_hash' => $csrf_hash]);
+        else echo json_encode(['success' => false, 'message' => 'Not found', 'csrf_token_name' => $csrf_name, 'csrf_hash' => $csrf_hash]);
+    }
+
+    /**
+     * Update staff (POST) - accepts multipart/form-data for profile image.
+     * Returns JSON with success and refreshed CSRF tokens.
+     */
+    public function update_staff()
+    {
+        if ($this->input->server('REQUEST_METHOD') !== 'POST') {
+            show_404();
+            return;
+        }
+
+        if ($this->session->userdata('role') !== 'owner') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Permission denied']);
+            return;
+        }
+
+        $id = $this->input->post('signup_id');
+        if (empty($id)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Missing signup_id']);
+            return;
+        }
+
+        $this->load->database();
+
+        // Basic validation
+        $fullname = $this->input->post('fullname', TRUE);
+        $phone = $this->input->post('phone_number', TRUE);
+        $email = $this->input->post('email', TRUE);
+        $role = $this->input->post('role', TRUE) ?? 'staff';
+
+        $update = [];
+        if ($fullname) $update['fullname'] = $fullname;
+        if ($phone) $update['phone_number'] = $phone;
+        if ($email) $update['email'] = $email;
+        if ($role) $update['role'] = $role;
+
+        // Handle profile image upload if present
+        if (!empty($_FILES['profile_image']['name'])) {
+            $config['upload_path'] = FCPATH . 'uploads/profile_images/';
+            if (!is_dir($config['upload_path'])) mkdir($config['upload_path'], 0755, true);
+            $config['allowed_types'] = 'jpg|jpeg|png';
+            $config['max_size'] = 2048;
+            $config['encrypt_name'] = TRUE;
+            $this->load->library('upload', $config);
+            if ($this->upload->do_upload('profile_image')) {
+                $d = $this->upload->data();
+                $update['profile_image'] = 'uploads/profile_images/' . $d['file_name'];
+            } else {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => strip_tags($this->upload->display_errors())]);
+                return;
+            }
+        }
+
+        if (!empty($update)) {
+            $this->db->where('signup_id', $id)->update('tbl_signup', $update);
+        }
+
+        $csrf_name = $this->security->get_csrf_token_name();
+        $csrf_hash = $this->security->get_csrf_hash();
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'Updated', 'csrf_token_name' => $csrf_name, 'csrf_hash' => $csrf_hash]);
+    }
 }

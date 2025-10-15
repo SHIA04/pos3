@@ -23,6 +23,21 @@ SET time_zone = "+00:00";
 
 -- --------------------------------------------------------
 
+-- --------------------------------------------------------
+
+-- Table structure for table `remember_tokens`
+
+CREATE TABLE `remember_tokens` (
+  `id` int(11) NOT NULL,
+  `signup_id` int(11) NOT NULL,
+  `token_hash` varchar(255) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
 --
 -- Table structure for table `menu_tbl`
 --

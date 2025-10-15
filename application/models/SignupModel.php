@@ -74,4 +74,17 @@ class SignupModel extends CI_Model
                         ->limit(1)
                         ->count_all_results($this->table) > 0;
     }
+
+    /**
+     * Get users by role (e.g., 'staff', 'cashier', 'chef')
+     * Returns an array of rows.
+     */
+    public function get_by_role($role)
+    {
+        return $this->db->from($this->table)
+                        ->where('role', $role)
+                        ->order_by('created_at', 'DESC')
+                        ->get()
+                        ->result_array();
+    }
 }
